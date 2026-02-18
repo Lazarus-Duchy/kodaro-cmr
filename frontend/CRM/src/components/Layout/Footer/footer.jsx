@@ -1,7 +1,10 @@
-import React from "react";
-import "./footer.css";
+import { AppShell } from '@mantine/core';
+import "./Footer.css";
 
-const footer = () =>{
-    //logika
+const Footer = () =>{
+    return (
+        <AppShell.Footer>Built by Księstwo Lazarusa with &lt;3</AppShell.Footer>
+    );
 }
-export default footer;
+
+export default Footer;
