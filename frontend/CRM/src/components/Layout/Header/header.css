@@ -1,0 +1,32 @@
+.mantine-AppShell-header {
+    background-color: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e1f0ef;
+    z-index: 100;
+    position: relative; 
+}
+
+.search-input input {
+    border-radius: 20px;
+    background-color: #f0f8f7;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.search-input input:focus {
+    border-color: #88c9c5;
+}
+
+.logo-container {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.logo-container:hover {
+    transform: scale(1.02);
+}
