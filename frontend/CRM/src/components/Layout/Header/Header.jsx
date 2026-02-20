@@ -1,4 +1,8 @@
-import { AppShell, Burger, Flex, TextInput, Image, Button, Group, Modal, Stack, Text, Divider, PasswordInput, Progress, Box } from '@mantine/core';
+import { 
+  AppShell, Burger, Flex, TextInput, Image, Button, Group, 
+  Modal, Stack, Text, Divider, PasswordInput, Progress, Box, 
+  useMantineColorScheme 
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +11,9 @@ import "../Header/header.css";
 
 const Header = (props) => {
   const navigate = useNavigate();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   const [loginOpened, { open: openLogin, close: closeLogin }] = useDisclosure(false);
   const [regOpened, { open: openReg, close: closeReg }] = useDisclosure(false);
   const [password, setPassword] = useState('');
@@ -25,16 +32,16 @@ const Header = (props) => {
 
   const googleButtonStyle = {
     root: {
-      backgroundColor: '#fff',
-      color: '#747a80',
-      border: '1px solid #dadce0',
-      '&:hover': { backgroundColor: '#f8f9fa' }
+      backgroundColor: isDark ? 'transparent' : '#fff',
+      color: isDark ? '#ced4da' : '#747a80',
+      border: `1px solid ${isDark ? '#373a40' : '#dadce0'}`,
+      '&:hover': { backgroundColor: isDark ? '#2c2e33' : '#f8f9fa' }
     }
   };
 
   return (
     <>
-      <AppShell.Header p="md">
+      <AppShell.Header p="md" style={{ borderBottom: `1px solid ${isDark ? '#373a40' : '#e9ecef'}` }}>
         <Flex align="center" justify="space-between" h="100%">
           <Flex align="center" gap="md">
             <Burger opened={props.opened} onClick={props.toggle} hiddenFrom="sm" size="sm" />
@@ -52,23 +59,26 @@ const Header = (props) => {
             className="search-input" 
             placeholder="Search..." 
             style={{ flex: 1, maxWidth: 400 }} 
-            mx="md" 
+            mx="md"
+            styles={{
+              input: { backgroundColor: isDark ? '#25262b' : '#fff' }
+            }}
           />
 
           <Group gap="sm">
-            <Button variant="subtle" color="clientFlow.4" onClick={openLogin}>Login</Button>
-            <Button color="clientFlow.4" variant="subtle" radius="xl" onClick={openReg}>Register</Button>
+            <Button variant="strong" color="clientFlow.4" onClick={openLogin}>Login</Button>
+            <Button color="clientFlow.4"  variant="strong" onClick={openReg}>Register</Button>
           </Group>
         </Flex>
       </AppShell.Header>
 
-      <Modal opened={loginOpened} onClose={closeLogin} title="Login" centered radius="md">
+      <Modal opened={loginOpened} onClose={closeLogin}  centered radius="md">
         <Stack>
           <Text size="xl" fw={700} ta="center">Welcome back</Text>
           <Text size="sm" c="dimmed" ta="center" mb="md">Use your ClientFlow account</Text>
           <TextInput label="Email" placeholder="your@email.com" radius="md" withAsterisk />
           <PasswordInput label="Password" placeholder="********" radius="md" withAsterisk />
-          <Button color="clientFlow.4" fullWidth mt="md" radius="md" variant='strong'>Login</Button>
+          <Button color="clientFlow.4"variant="strong" fullWidth mt="md" radius="md">Login</Button>
           <Divider label="OR" labelPosition="center" my="md" />
           <Button variant="default" fullWidth radius="md" styles={googleButtonStyle}>
             Sign in with Google
@@ -76,7 +86,7 @@ const Header = (props) => {
         </Stack>
       </Modal>
 
-      <Modal opened={regOpened} onClose={closeReg} title="Register" centered radius="md">
+      <Modal opened={regOpened} onClose={closeReg}  centered radius="md">
         <Stack>
           <Text size="xl" fw={700} ta="center">Create account</Text>
           <Text size="sm" c="dimmed" ta="center" mb="md">Join the ClientFlow community</Text>
@@ -103,7 +113,7 @@ const Header = (props) => {
             </Text>
           </div>
           
-          <Button color="clientFlow.4" fullWidth mt="md" radius="md" variant='strong'>Sign up</Button>
+          <Button color="clientFlow.4"variant="strong" fullWidth mt="md" radius="md">Sign up</Button>
         </Stack>
       </Modal>
     </>

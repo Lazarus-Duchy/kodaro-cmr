@@ -1,4 +1,4 @@
-import { AppShell, NavLink, Text, Avatar, Group, Box, Badge, Divider, ActionIcon } from '@mantine/core';
+import { AppShell, NavLink, Text, Avatar, Group, Box, Badge, Divider, ActionIcon, useMantineColorScheme } from '@mantine/core';
 import { 
   IconUsers, 
   IconAddressBook, 
@@ -6,7 +6,9 @@ import {
   IconSpeakerphone, 
   IconPoint, 
   IconSettings, 
-  IconLogout 
+  IconLogout,
+  IconSun,
+  IconMoonStars 
 } from '@tabler/icons-react';
 
 const navlinks = [
@@ -42,6 +44,8 @@ const navlinks = [
 const maxStackSize = 9;
 
 const Navbar = ({ pathSteps }) => {
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const mapNavLinks = (list, stack = 0, parentHref = '', isParentActive = true) => {
     if (stack > maxStackSize) {
@@ -98,8 +102,22 @@ const Navbar = ({ pathSteps }) => {
           </Box>
         ))}
       </AppShell.Section>
+
       <AppShell.Section>
         <Divider my="sm" />
+
+        <Group justify="space-between" px="xs" mb="xs">
+          <Text size="xs" c="dimmed" fw={500}>Appearance</Text>
+          <ActionIcon 
+            onClick={() => toggleColorScheme()} 
+            variant="default" 
+            size="sm" 
+            radius="md"
+            title="Toggle color scheme"
+          >
+            {isDark ? <IconSun size={16} /> : <IconMoonStars size={16} />}
+          </ActionIcon>
+        </Group>
 
         <NavLink
           label="Settings"
@@ -108,8 +126,9 @@ const Navbar = ({ pathSteps }) => {
         />
 
         <Box mt="md" p="xs" style={{ 
-          background: '#f8f9fa', 
-          borderRadius: '12px' 
+          background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa', 
+          borderRadius: '12px',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent'
         }}>
           <Group justify="space-between" wrap="nowrap">
             <Group gap="sm">
@@ -125,7 +144,6 @@ const Navbar = ({ pathSteps }) => {
           </Group>
         </Box>
       </AppShell.Section>
-
     </AppShell.Navbar>
   );
 };

@@ -9,6 +9,11 @@
   align-items: center;
   background-color: #ffffff;
   z-index: 9999;
+  transition: background-color 0.3s ease;
+}
+
+[data-mantine-color-scheme='dark'] .loading-container {
+  background-color: #1a1b1e;
 }
 
 .loader-wrapper {
@@ -34,6 +39,11 @@
   font-weight: 800;
   color: #2c2e33;
   letter-spacing: -1px;
+  transition: color 0.3s ease;
+}
+
+[data-mantine-color-scheme='dark'] .loader-text {
+  color: #c1c2c5;
 }
 
 .loader-text span {
@@ -47,6 +57,11 @@
   border-radius: 10px;
   overflow: hidden;
   position: relative;
+  transition: background-color 0.3s ease;
+}
+
+[data-mantine-color-scheme='dark'] .loading-bar {
+  background-color: #373a40;
 }
 
 .loading-progress {

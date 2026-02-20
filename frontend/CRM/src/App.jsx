@@ -1,4 +1,4 @@
-import { Anchor, AppShell, Breadcrumbs } from '@mantine/core';
+import { AppShell } from '@mantine/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
@@ -13,7 +13,6 @@ import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrum
 const App = () => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
   const [navbarOpened, { toggle }] = useDisclosure();
   const [section, setSection] = useState({ href: '/', label: "Home" });
   const [pathSteps, setPathSteps] = useState([{ href: '/', label: "Home" }]);
@@ -23,13 +22,17 @@ const App = () => {
     let tempPathSteps = [{ href: '/', label: "Home" }];
 
     location.pathname.split("/").slice(1).forEach(item => {
-        if (item !== '') {
-          curHref += `/${item}`;
-          tempPathSteps.push({ href: curHref, label: item.charAt(0).toUpperCase() + item.slice(1), hrefPart: item });
-        }
+      if (item !== '') {
+        curHref += `/${item}`;
+        tempPathSteps.push({ 
+          href: curHref, 
+          label: item.charAt(0).toUpperCase() + item.slice(1), 
+          hrefPart: item 
+        });
+      }
     });
 
-    setPathSteps(tempPathSteps.slice());
+    setPathSteps(tempPathSteps);
     setSection(tempPathSteps[tempPathSteps.length - 1]);
 
     const timer = setTimeout(() => {
@@ -37,7 +40,7 @@ const App = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [location.pathname]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -48,6 +51,7 @@ const App = () => {
       <AppShell
         padding="md"
         header={{ height: 60 }}
+        footer={{ height: 60 }}
         navbar={{
           width: 300,
           breakpoint: 'sm',
@@ -58,7 +62,7 @@ const App = () => {
         <Navbar pathSteps={pathSteps} />
         
         <AppShell.Main>
-          {section.href != '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
+          {section.href !== '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
           <RouterSwitcher />
         </AppShell.Main>
         
