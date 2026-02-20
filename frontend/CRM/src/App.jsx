@@ -1,5 +1,5 @@
 import { AppShell } from '@mantine/core';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
 
@@ -12,6 +12,7 @@ import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrum
 
 const App = () => {
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
   const [navbarOpened, { toggle }] = useDisclosure();
   const [section, setSection] = useState({ href: '/', label: "Home" });
@@ -35,40 +36,42 @@ const App = () => {
     setPathSteps(tempPathSteps);
     setSection(tempPathSteps[tempPathSteps.length - 1]);
 
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-
+    const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
-    <div className='App'>
-      <AppShell
-        padding="md"
-        header={{ height: 60 }}
-        footer={{ height: 60 }}
-        navbar={{
-          width: 300,
-          breakpoint: 'sm',
-          collapsed: { mobile: !navbarOpened },
-        }}
-      >
-        <Header opened={navbarOpened} toggle={toggle} />
-        <Navbar pathSteps={pathSteps} />
-        
-        <AppShell.Main>
-          {section.href !== '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
-          <RouterSwitcher />
-        </AppShell.Main>
-        
-        <Footer />
-      </AppShell>
-    </div>
+    <AppShell
+      padding="md"
+      header={{ height: 60 }}
+      footer={{ height: 60 }}
+      navbar={{
+        width: 300,
+        breakpoint: 'sm',
+        collapsed: { mobile: !navbarOpened },
+      }}
+    >
+      <Header 
+        opened={navbarOpened} 
+        toggle={toggle} 
+        isLoggedIn={isLoggedIn} 
+        setIsLoggedIn={setIsLoggedIn} 
+      />
+      
+      <Navbar 
+        pathSteps={pathSteps} 
+        isLoggedIn={isLoggedIn} 
+      />
+
+      <AppShell.Main>
+        {section.href !== '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
+        <RouterSwitcher isLoggedIn={isLoggedIn} />
+      </AppShell.Main>
+      
+      <Footer />
+    </AppShell>
   );
 }
 
