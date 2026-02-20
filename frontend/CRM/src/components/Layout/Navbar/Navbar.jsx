@@ -8,6 +8,7 @@ import {
   IconSettings, 
   IconLogout 
 } from '@tabler/icons-react';
+
 const navlinks = [
   { 
     header: 'Main', 
@@ -40,8 +41,7 @@ const navlinks = [
 
 const maxStackSize = 9;
 
-const Navbar = (props) => {
-  const breadcrumbsItems = props.breadcrumbsItems;
+const Navbar = ({ pathSteps }) => {
 
   const mapNavLinks = (list, stack = 0, parentHref = '', isParentActive = true) => {
     if (stack > maxStackSize) {
@@ -51,7 +51,7 @@ const Navbar = (props) => {
 
     return list.map((item, index) => {
       const fullHref = `${parentHref}/${item.href}`;
-      const isItemActive = isParentActive && breadcrumbsItems.length > stack + 1 && breadcrumbsItems[stack + 1].hrefPart == item.href;
+      const isItemActive = isParentActive && pathSteps.length > stack + 1 && pathSteps[stack + 1].hrefPart == item.href;
 
       return (
         <NavLink

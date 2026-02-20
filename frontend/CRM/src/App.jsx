@@ -3,39 +3,41 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useDisclosure } from '@mantine/hooks';
 import { useState, useEffect } from 'react';
 
-
 import RouterSwitcher from './components/RouterSwitcher/RouterSwitcher';
 import Header from './components/Layout/Header/Header.jsx';
 import Navbar from './components/Layout/Navbar/Navbar.jsx';
 import Footer from './components/Layout/Footer/footer.jsx';
 import LoadingScreen from './components/Modals/LoadingScreen/loadingScreen.jsx';
+import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrumbs.jsx';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const [opened, { toggle }] = useDisclosure();
-
-  const breadcrumbsItems = [{ href: '/', label: "Home" }];
+  const [navbarOpened, { toggle }] = useDisclosure();
+  const [section, setSection] = useState({ href: '/', label: "Home" });
+  const [pathSteps, setPathSteps] = useState([{ href: '/', label: "Home" }]);
 
   useEffect(() => {
+    let curHref = '';
+    let tempPathSteps = [{ href: '/', label: "Home" }];
+
+    location.pathname.split("/").slice(1).forEach(item => {
+        if (item !== '') {
+          curHref += `/${item}`;
+          tempPathSteps.push({ href: curHref, label: item.charAt(0).toUpperCase() + item.slice(1), hrefPart: item });
+        }
+    });
+
+    setPathSteps(tempPathSteps.slice());
+    setSection(tempPathSteps[tempPathSteps.length - 1]);
+
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
+
     return () => clearTimeout(timer);
   }, []);
-
-  let curHref = '';
-  location.pathname.split("/").slice(1).forEach(item => {
-    if (item !== '') {
-      curHref += `/${item}`;
-      breadcrumbsItems.push({ 
-        href: curHref, 
-        label: item.charAt(0).toUpperCase() + item.slice(1), 
-        hrefPart: item 
-      });
-    }
-  });
 
   if (loading) {
     return <LoadingScreen />;
@@ -49,27 +51,14 @@ const App = () => {
         navbar={{
           width: 300,
           breakpoint: 'sm',
-          collapsed: { mobile: !opened },
+          collapsed: { mobile: !navbarOpened },
         }}
       >
-        <Header opened={opened} toggle={toggle} />
-        <Navbar breadcrumbsItems={breadcrumbsItems} />
+        <Header opened={navbarOpened} toggle={toggle} />
+        <Navbar pathSteps={pathSteps} />
         
         <AppShell.Main>
-          <Breadcrumbs separator=">" mb="md">
-            {breadcrumbsItems.map((item, index) => (
-              <Anchor 
-                key={index} 
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(item.href);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {item.label}
-              </Anchor>
-            ))}
-          </Breadcrumbs>
+          {section.href != '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
           <RouterSwitcher />
         </AppShell.Main>
         
