@@ -18,8 +18,15 @@ from Clients.views import (
     ContactListCreateView,
 )
 
+from Products.views import (
+    CategoryDetailView,
+    CategoryListCreateView,
+    ProductDetailView,
+    ProductListCreateView,
+    ProductStatsView,
+)
+
 urlpatterns = [
-    path('items/', ItemsView.as_view(), name='items'),
     # ── Auth ──────────────────────────────────────────────────────────────────
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
     path("auth/login/", LoginView.as_view(), name="auth-login"),
@@ -42,4 +49,14 @@ urlpatterns = [
     # ── Contacts (nested under a client) ─────────────────────────────────────
     path("clients/<uuid:client_pk>/contacts/", ContactListCreateView.as_view(), name="contact-list"),
     path("clients/<uuid:client_pk>/contacts/<uuid:pk>/", ContactDetailView.as_view(), name="contact-detail"),
+
+     # ── Categories ────────────────────────────────────────────────────────────
+    path("products/categories/", CategoryListCreateView.as_view(), name="category-list"),
+    path("products/categories/<uuid:pk>/", CategoryDetailView.as_view(), name="category-detail"),
+
+    # ── Products ──────────────────────────────────────────────────────────────
+    path("products/", ProductListCreateView.as_view(), name="product-list"),
+    path("products/stats/", ProductStatsView.as_view(), name="product-stats"),
+    path("products/<uuid:pk>/", ProductDetailView.as_view(), name="product-detail"),
+
 ]
