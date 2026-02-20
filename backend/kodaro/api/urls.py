@@ -10,6 +10,14 @@ from Users.views import (
     UserDetailView,
     UserListView,
 )
+from Clients.views import (
+    ClientDetailView,
+    ClientListCreateView,
+    ClientStatsView,
+    ContactDetailView,
+    ContactListCreateView,
+)
+
 urlpatterns = [
     path('items/', ItemsView.as_view(), name='items'),
     # ── Auth ──────────────────────────────────────────────────────────────────
@@ -25,4 +33,13 @@ urlpatterns = [
     # ── Admin ─────────────────────────────────────────────────────────────────
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/<uuid:pk>/", UserDetailView.as_view(), name="user-detail"),
+    
+    # ── Clients ───────────────────────────────────────────────────────────────
+    path("clients/", ClientListCreateView.as_view(), name="client-list"),
+    path("clients/stats/", ClientStatsView.as_view(), name="client-stats"),
+    path("clients/<uuid:pk>/", ClientDetailView.as_view(), name="client-detail"),
+
+    # ── Contacts (nested under a client) ─────────────────────────────────────
+    path("clients/<uuid:client_pk>/contacts/", ContactListCreateView.as_view(), name="contact-list"),
+    path("clients/<uuid:client_pk>/contacts/<uuid:pk>/", ContactDetailView.as_view(), name="contact-detail"),
 ]
