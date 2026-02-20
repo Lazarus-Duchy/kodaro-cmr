@@ -54,11 +54,14 @@ export function TableSort({
   structure, 
   data, 
   addRowsTitle = "Add new row", 
+  addRowBtnInfo = "Add new row",
   editRowTitle = "Edit row", 
   deleteRowTitle = "Delete row", 
+  deleteRowInfo = "Are you sure you want to delete this row? This action is destructive, this data will be gone forever!",
   canAddRows = false, 
   canEditRows = false, 
-  canDeleteRows = false 
+  canDeleteRows = false,
+  validation = {}
 }) {
   // Sort and Search
   const [search, setSearch] = useState('');
@@ -79,17 +82,13 @@ export function TableSort({
   const newRowForm = useForm({
     mode: 'uncontrolled',
 
-    validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-    },
+    validate: validation
   });
 
   const editRowForm = useForm({
     mode: 'uncontrolled',
 
-    validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-    },
+    validate: validation
   });
   // Handling Data Modifications
   const handleAddRow = async () => {
@@ -152,9 +151,9 @@ export function TableSort({
       ))}
       {(canEditRows || canDeleteRows) && 
         <Table.Td>
-          <Group>
+          <Group grow>
             {canEditRows && <Button variant='light' onClick={(event) => {handleEditOpen(row)}}><IconEdit size={20} stroke={1.5}/></Button>}
-            {canDeleteRows && <Button variant='outline' color="red" onClick={(event) => {deleteRowOpen(row)}}><IconTrash color="red" size={20} stroke={1.5}/></Button>}
+            {canDeleteRows && <Button variant='outline' color="red" onClick={(event) => {deleteRowOpen(row)}}><IconTrash size={20} stroke={1.5}/></Button>}
           </Group>
         </Table.Td>
       }
@@ -223,9 +222,7 @@ export function TableSort({
       <Modal opened={deleteRowOpened} onClose={deleteRowClose} title={deleteRowTitle}>
         <LoadingOverlay visible={deleteRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
         <Stack>
-          <Text size="sm">
-            Are you sure you want to delete this row? This action is destructive, this data will be gone forever!
-          </Text>
+          <Text size="sm">{deleteRowInfo}</Text>
           <Group justify="flex-end">
             <Button variant="default" onClick={() => {deleteRowClose()}}>Cancel</Button>
             <Button color="red" onClick={handleDeleteRow}>Delete row</Button>
@@ -239,14 +236,14 @@ export function TableSort({
           <TextInput
             placeholder="Search by any field"
             mb="md"
-            w="90%"
+            w={canAddRows ? "85%": "100%"}
             leftSection={<IconSearch size={16} stroke={1.5} />}
             value={search}
             onChange={handleSearchChange}
           />
-          {canAddRows && <Button onClick={newRowOpen} w="10%">Add new row</Button>}
+          {canAddRows && <Button onClick={newRowOpen} w="15%">{addRowBtnInfo}</Button>}
         </Flex>
-      <Table horizontalSpacing="md" verticalSpacing="xs" miw={700} layout="fixed" highlightOnHover stickyHeader stickyHeaderOffset={60}>
+      <Table verticalSpacing="sm" horizontalSpacing="md" miw={700} layout="fixed" highlightOnHover stickyHeader stickyHeaderOffset={60}>
         <Table.Tbody>
           <Table.Tr>
             {head}
