@@ -8,6 +8,7 @@ import {
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
+import SummaryCard from '../../Features/SummaryCard/SummaryCard';
 
 const stats = [
   { title: 'Total Revenue', value: '$69,420', diff: 34, icon: <IconCurrencyDollar size={24} /> },
@@ -53,19 +54,10 @@ const Reports = () => {
 
       <Grid>
         {stats.map((stat, index) => (
+
           <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <Paper withBorder p="md" radius="md">
-              <Group justify="space-between">
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase">{stat.title}</Text>
-                <Text c="clientFlow.4">{stat.icon}</Text>
-              </Group>
-              <Group align="flex-end" gap="xs" mt={10}>
-                <Text size="xl" fw={700}>{stat.value}</Text>
-                <Text c={stat.diff > 0 ? 'teal' : 'red'} size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                  {Math.abs(stat.diff)}% {stat.diff > 0 ? <IconArrowUpRight size={16} /> : <IconArrowDownRight size={16} />}
-                </Text>
-              </Group>
-            </Paper>
+            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} />
+            
           </Grid.Col>
         ))}
       </Grid>

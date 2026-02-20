@@ -3,7 +3,7 @@ import { Anchor, Breadcrumbs } from '@mantine/core';
 const PathBreadcrumbs = ({ pathSteps }) => {
 
   return (
-    <Breadcrumbs separator=">">
+    <Breadcrumbs separator=">" mb="md">
     {pathSteps.map((item, index) => (
         <Anchor href={item.href} key={index}>
           {item.label}
