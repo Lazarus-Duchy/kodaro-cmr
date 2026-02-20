@@ -26,6 +26,20 @@ from Products.views import (
     ProductStatsView,
 )
 
+from Purchases.views import (
+    PurchaseDetailView,
+    PurchaseListCreateView,
+    PurchasesByClientCountryView,
+    PurchasesByClientView,
+    PurchasesByCategoryView,
+    PurchasesByDayView,
+    PurchasesByMonthAllYearsView,
+    PurchasesByMonthYearView,
+    PurchasesByProductView,
+    PurchasesOverPriceView,
+    PurchaseStatsView,
+)
+
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────────────────
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
@@ -59,4 +73,33 @@ urlpatterns = [
     path("products/stats/", ProductStatsView.as_view(), name="product-stats"),
     path("products/<uuid:pk>/", ProductDetailView.as_view(), name="product-detail"),
 
+        # ── CRUD ──────────────────────────────────────────────────────────────────
+    path("purchases/", PurchaseListCreateView.as_view(), name="purchase-list"),
+    path("purchases/stats/", PurchaseStatsView.as_view(), name="purchase-stats"),
+    path("purchases/<uuid:pk>/", PurchaseDetailView.as_view(), name="purchase-detail"),
+
+    # ── Filtered views ─────────────────────────────────────────────────────────
+    # All purchases of a product
+    path("purchases/by-product/<uuid:product_id>/", PurchasesByProductView.as_view(), name="purchases-by-product"),
+
+    # All purchases on a specific date  →  /purchases/by-day/2024-03-15/
+    path("purchases/by-day/<str:date>/", PurchasesByDayView.as_view(), name="purchases-by-day"),
+
+    # All purchases in a product category
+    path("purchases/by-category/<uuid:category_id>/", PurchasesByCategoryView.as_view(), name="purchases-by-category"),
+
+    # All purchases in a specific month + year  →  /purchases/by-month/2024/3/
+    path("purchases/by-month/<int:year>/<int:month>/", PurchasesByMonthYearView.as_view(), name="purchases-by-month-year"),
+
+    # All purchases in a month number across ALL years  →  /purchases/by-month/3/
+    path("purchases/by-month/<int:month>/", PurchasesByMonthAllYearsView.as_view(), name="purchases-by-month-all-years"),
+
+    # All purchases by a client
+    path("purchases/by-client/<uuid:client_id>/", PurchasesByClientView.as_view(), name="purchases-by-client"),
+
+    # All purchases over a price  →  /purchases/over-price/?price=500&currency=PLN
+    path("purchases/over-price/", PurchasesOverPriceView.as_view(), name="purchases-over-price"),
+
+    # All purchases by client's country  →  /purchases/by-country/Poland/
+    path("purchases/by-country/<str:country>/", PurchasesByClientCountryView.as_view(), name="purchases-by-country"),
 ]

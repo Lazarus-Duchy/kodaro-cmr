@@ -74,4 +74,6 @@ class Product(models.Model):
 
     @property
     def price_with_tax(self):
+        if self.price is None:
+            return None
         return round(self.price * (1 + self.tax_rate / 100), 2)
