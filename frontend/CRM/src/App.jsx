@@ -9,11 +9,53 @@ import Navbar from './components/Layout/Navbar/Navbar.jsx';
 import Footer from './components/Layout/Footer/footer.jsx';
 import LoadingScreen from './components/Modals/LoadingScreen/loadingScreen.jsx';
 import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrumbs.jsx';
+import { 
+  IconUsers, 
+  IconAddressBook, 
+  IconChartBar, 
+  IconSpeakerphone, 
+  IconPoint, 
+  IconSettings, 
+  IconLogout,
+  IconSun,
+  IconMoonStars 
+} from '@tabler/icons-react';
+
+const navlinks = [
+  { 
+    header: 'Main', 
+    links: [
+      { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} />,},
+      { href: 'clients', label: 'Clients', icon: <IconUsers size={20} stroke={1.5} /> },
+    ]
+  },
+  {
+    header: 'Tools',
+    links: [
+      { 
+        href: 'marketing', 
+        label: 'Marketing', 
+        icon: <IconSpeakerphone size={20} stroke={1.5} />,
+        children: [
+          { href: 'marketing1', label: 'Campaigns', icon: <IconPoint size={14} /> }, 
+          { 
+            href: 'marketing2', 
+            label: 'Analytics', 
+            icon: <IconPoint size={14} />,
+            children: [{ href: 'marketing1.1', label: 'Social Media', icon: <IconPoint size={14} /> }] 
+          }
+        ] 
+      },
+      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
+    ]
+  }
+];
+
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
-  const [navbarOpened, { toggle }] = useDisclosure();
+  const [navbarOpened, { navbarToggle }] = useDisclosure();
   const [section, setSection] = useState({ href: '/', label: "Home" });
   const [pathSteps, setPathSteps] = useState([{ href: '/', label: "Home" }]);
 
@@ -58,8 +100,8 @@ const App = () => {
           collapsed: { mobile: !navbarOpened },
         }}
       >
-        <Header opened={navbarOpened} toggle={toggle} />
-        <Navbar pathSteps={pathSteps} />
+        <Header burgerOpened={navbarOpened} burgerToogle={navbarToggle} navlinks={navlinks} />
+        <Navbar pathSteps={pathSteps} navlinks={navlinks} />
         
         <AppShell.Main>
           {section.href !== '/' && <PathBreadcrumbs pathSteps={pathSteps} />}

@@ -11,39 +11,9 @@ import {
   IconMoonStars 
 } from '@tabler/icons-react';
 
-const navlinks = [
-  { 
-    header: 'Main', 
-    links: [
-      { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} />,},
-      { href: 'clients', label: 'Clients', icon: <IconUsers size={20} stroke={1.5} /> },
-    ]
-  },
-  {
-    header: 'Tools',
-    links: [
-      { 
-        href: 'marketing', 
-        label: 'Marketing', 
-        icon: <IconSpeakerphone size={20} stroke={1.5} />,
-        children: [
-          { href: 'marketing1', label: 'Campaigns', icon: <IconPoint size={14} /> }, 
-          { 
-            href: 'marketing2', 
-            label: 'Analytics', 
-            icon: <IconPoint size={14} />,
-            children: [{ href: 'marketing1.1', label: 'Social Media', icon: <IconPoint size={14} /> }] 
-          }
-        ] 
-      },
-      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
-    ]
-  }
-];
-
 const maxStackSize = 9;
 
-const Navbar = ({ pathSteps }) => {
+const Navbar = ({ pathSteps, navlinks }) => {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 

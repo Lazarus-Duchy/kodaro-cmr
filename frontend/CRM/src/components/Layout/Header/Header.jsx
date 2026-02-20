@@ -1,7 +1,8 @@
 import { 
   AppShell, Burger, Flex, TextInput, Image, Button, Group, 
   Modal, Stack, Text, Divider, PasswordInput, Progress, Box, 
-  useMantineColorScheme 
+  useMantineColorScheme, 
+  NavLink
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/ClientFlow.png';
 import "../Header/header.css";
 
-const Header = (props) => {
+const Header = ({navlinks, burgerOpened, burgerToogle}) => {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
@@ -39,12 +40,56 @@ const Header = (props) => {
     }
   };
 
+
+  const mapNavLinks = (list, stack = 0, parentHref = '') => {
+    if (stack > maxStackSize) {
+      console.warn(`Stack reached it's limit! (${maxStackSize})`);
+      return;
+    }
+
+    return list.map((item, index) => {
+      const fullHref = `${parentHref}/${item.href}`;
+      const isItemActive = isParentActive && pathSteps.length > stack + 1 && pathSteps[stack + 1].hrefPart == item.href;
+
+      return (
+        <NavLink
+          href={fullHref}
+          key={index}
+          active={isItemActive}
+          label={item.label}
+          description={item.description}
+          leftSection={item.icon}
+          rightSection={item.badge && <Badge size="xs" variant="filled" color="red">{item.badge}</Badge>}
+          pl={stack > 0 ? stack * 20 : 12}
+          py={10}
+          styles={{
+            root: {
+              borderRadius: '8px',
+              marginBottom: '4px',
+              transition: 'all 0.2s ease',
+            },
+            label: {
+              fontWeight: isItemActive ? 600 : 500,
+              fontSize: '14px',
+            },
+            description: { fontSize: '11px' }
+          }}
+          variant="light"
+          color="clientFlow.4"
+          defaultOpened={isItemActive}
+        >
+          {item.children && item.children.length > 0 ? mapNavLinks(item.children, stack + 1, fullHref, isItemActive) : ""}
+        </NavLink>
+      );
+    });
+  };
+
   return (
     <>
       <AppShell.Header p="md" style={{ borderBottom: `1px solid ${isDark ? '#373a40' : '#e9ecef'}` }}>
         <Flex align="center" justify="space-between" h="100%">
           <Flex align="center" gap="md">
-            <Burger opened={props.opened} onClick={props.toggle} hiddenFrom="sm" size="sm" />
+            <Burger opened={burgerOpened} onClick={burgerToogle} hiddenFrom="sm" size="sm" />
             
             <Box 
               onClick={() => navigate('/')} 
@@ -85,7 +130,7 @@ const Header = (props) => {
           </Button>
         </Stack>
       </Modal>
-
+        
       <Modal opened={regOpened} onClose={closeReg}  centered radius="md">
         <Stack>
           <Text size="xl" fw={700} ta="center">Create account</Text>

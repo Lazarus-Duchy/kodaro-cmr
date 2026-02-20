@@ -56,7 +56,7 @@ const Reports = () => {
         {stats.map((stat, index) => (
 
           <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} />
+            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} desc={stat.desc} />
             
           </Grid.Col>
         ))}
