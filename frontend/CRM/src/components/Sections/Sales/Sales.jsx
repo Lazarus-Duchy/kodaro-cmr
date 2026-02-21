@@ -1,10 +1,11 @@
-import { Box, Grid, Group, NumberInput, Paper, Select, Stack, Text, TextInput, Title } from "@mantine/core"
+import { Box, Checkbox, Flex, Grid, Group, NumberInput, Paper, ScrollArea, Select, Stack, Text, TextInput, Title } from "@mantine/core"
 import { IconFlame, IconPercentage, IconShoppingBag } from "@tabler/icons-react";
 import { Area, AreaChart, CartesianGrid, Cell, Label, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from "recharts"
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
 import { useForm } from "@mantine/form";
 import { useState } from "react";
+import { randomId, useListState } from "@mantine/hooks";
 
 const tableValidation = {
 
@@ -18,17 +19,31 @@ const tableStructure = [
   {name: 'price', label: 'Price', type: 'number', isEditable: true, required: true, default: 1}, 
 ];
 
-const temptotalSalesData = [
-  { name: 'Jan', sales: 4000 }, { name: 'Feb', sales: 3000 }, { name: 'Mar', sales: 2000 },
-  { name: 'Apr', sales: 2780 }, { name: 'May', sales: 1890 }, { name: 'Jun', sales: 6390 },
-  { name: 'Jul', sales: 3490 }, { name: 'Aug', sales: 5120 }, { name: 'Sep', sales: 6200 },
-  { name: 'Oct', sales: 8400 }, { name: 'Nov', sales: 12500 }, { name: 'Dec', sales: 13650 },
+const tempProductSalesData = [
+  { name: 'Jan', p1: 4000, p2: 3000, p3: 6000 }, 
+  { name: 'Feb', p1: 3000, p2: 3500, p3: 5500 }, 
+  { name: 'Mar', p1: 2000, p2: 2700, p3: 4000 },
+  { name: 'Apr', p1: 2780, p2: 2500, p3: 3500 }, 
+  { name: 'May', p1: 1890, p2: 3000, p3: 6000 }, 
+  { name: 'Jun', p1: 6390, p2: 3500, p3: 7200 },
+  { name: 'Jul', p1: 3490, p2: 2300, p3: 6700 }, 
+  { name: 'Aug', p1: 5120, p2: 2400, p3: 5000 }, 
+  { name: 'Sep', p1: 6200, p2: 4000, p3: 4000 },
+  { name: 'Oct', p1: 8400, p2: 5000, p3: 1000 }, 
+  { name: 'Nov', p1: 12500, p2: 6000, p3: 300 }, 
+  { name: 'Dec', p1: 13650, p2: 7000, p3: 20 },
 ];
 
 const tempproductSalesPercentageData = [
   { name: 'p1', value: 10},
   { name: 'p2', value: 50},
   { name: 'p3', value: 40},
+]
+
+const tempProductsDisplay = [
+  {name: 'p1', label: 'P1', checked: true, key: randomId()},
+  {name: 'p2', label: 'P2', checked: true, key: randomId()},
+  {name: 'p3', label: 'P3', checked: true, key: randomId()},
 ]
 
 const colors = ['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d', '#a4de6c'];
@@ -41,8 +56,12 @@ const Sales = () => {
     { title: 'Hot category sales', value: '—', icon: <IconFlame size={24} /> },
   ]);
   const [hotProductCategory, sethHotProductCategory] = useState("temp");
-  const [totalSalesData, setTotalSalesData] = useState(temptotalSalesData);
+  const [productSalesData, setProductSalesData] = useState(tempProductSalesData);
   const [productSalesPercentageData, setProductSalesPercentageData] = useState(tempproductSalesPercentageData);
+  const [productsDisplayData, productsDisplayDataHandlers] = useListState(tempProductsDisplay);
+
+  const displayAllChecked = productsDisplayData.every((value) => value.checked);
+  const displayIndeterminate = productsDisplayData.some((value) => value.checked) && !displayAllChecked;
 
   const [productCategoriesData, setProductCategoriesData] = useState(['cat1', 'cat2']);
 
@@ -50,7 +69,7 @@ const Sales = () => {
   const editRowForm = useForm({mode: 'uncontrolled', initialValues: {category: productCategoriesData[0]}, validate: tableValidation});
 
   const newRowFields = [
-    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly withAsterisk required {...newRowForm.getInputProps('id')} />,
+    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly required {...newRowForm.getInputProps('id')} />,
     <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
     <NumberInput key={newRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...newRowForm.getInputProps('sku')} />,
     <NumberInput key={newRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...newRowForm.getInputProps('price')} />,
@@ -58,7 +77,7 @@ const Sales = () => {
   ]
 
   const editRowFields = [
-    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly withAsterisk required {...editRowForm.getInputProps('id')} />,
+    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly required {...editRowForm.getInputProps('id')} />,
     <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
     <NumberInput key={editRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...editRowForm.getInputProps('sku')} />,
     <NumberInput key={editRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...editRowForm.getInputProps('price')} />,
@@ -115,12 +134,12 @@ const Sales = () => {
       </Grid>
 
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="xl">Total Sales</Text>
-        <Box h={300}>
-          <ResponsiveContainer>
-            
-            <AreaChart data={totalSalesData}>
-              <defs>
+        <Text fw={700} mb="xl">Sales per Product</Text>
+        <Flex wrap="wrap" gap="md">
+          <Box h={300} w={{md: "80%", sm: "100%", xs: "100%"}}>
+            <ResponsiveContainer>
+              <LineChart data={productSalesData}>
+                <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#88c9c5" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#88c9c5" stopOpacity={0}/>
@@ -130,10 +149,42 @@ const Sales = () => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                <Area type="monotone" dataKey="sales" stroke="#88c9c5" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Box>
+                {
+                  productsDisplayData.map((product, index) => {
+                    if (product.checked) {return (
+                    <Line key={index} type="monotone" dataKey={product.name} stroke={colors[index % colors.length]} strokeWidth={3} />)}
+                  })
+                }
+                <Legend />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+          <ScrollArea h="300" w={{md: "15%", sm: "100%"}}>
+            <Stack>
+              <Checkbox
+                checked={displayAllChecked}
+                indeterminate={displayIndeterminate}
+                label="Show all products"
+                onChange={() =>
+                  productsDisplayDataHandlers.setState((current) =>
+                    current.map((value) => ({ ...value, checked: !displayAllChecked }))
+                  )
+                }
+              />
+              {productsDisplayData.map((product, index) => (
+                <Checkbox
+                  mt="xs"
+                  ml={33}
+                  label={product.label}
+                  key={product.key}
+                  checked={product.checked}
+                  onChange={(event) => productsDisplayDataHandlers.setItemProp(index, 'checked', event.currentTarget.checked)}
+                />
+              ))}
+          </Stack>
+          </ScrollArea>
+        </Flex>
+        
       </Paper>
 
       <TableSort 
