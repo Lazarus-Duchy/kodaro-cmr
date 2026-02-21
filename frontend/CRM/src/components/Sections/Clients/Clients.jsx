@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useForm } from '@mantine/form';
 import { TableSort } from "../../Features/TableSort/TableSort";
 import SummaryCard from '../../Features/SummaryCard/SummaryCard';
-//import { get, post, patch, del } from '../../../api';
+import { get, post, patch, del } from '../../../api';
 import { DateTimePicker } from '@mantine/dates';
 
 const tableStructure = [
@@ -51,7 +51,7 @@ const Clients = () => {
     <DateTimePicker key={editRowForm.key("created_at")} label={'Created At'} readOnly required {...editRowForm.getInputProps('created_at')}  />,
   ]
 
-  /*
+  
   // ── Fetch clients on mount ───────────────────────────────────────────────────
   
   useEffect(() => {
@@ -72,30 +72,30 @@ const Clients = () => {
     };
     fetchClients();
   }, []);
-  */
+  
 
   // ── CRUD handlers passed to TableSort ───────────────────────────────────────
 
   const handleAdd = async (values) => {
-    /*
+    
     const newClient = await post("/clients/", values);
     setTableData((prev) => [newClient, ...prev]);
     setStats((prev) => [
       { ...prev[0], value: String(Number(prev[0].value) + 1) },
       prev[1],
     ]);
-    */
+    
   };
 
   const handleEdit = async (id, values) => {
-    /*
+    
     const updated = await patch(`/clients/${id}/`, values);
     setTableData((prev) => prev.map((row) => (row.id === id ? updated : row)));
-    */
+    
   };
 
   const handleDelete = async (id) => {
-    /*
+    
     await del(`/clients/${id}/`);
     setTableData((prev) => {
       const next = prev.filter((row) => row.id !== id);
@@ -106,7 +106,7 @@ const Clients = () => {
       ]);
       return next;
     });
-    */
+    
   };
   
 
