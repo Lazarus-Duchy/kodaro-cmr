@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/ClientFlow.png';
 
+
 const Header = ({ opened, toggle }) => {
   const navigate = useNavigate();
   const [loginOpened, { open: openLogin, close: closeLogin }] = useDisclosure(false);
@@ -60,8 +61,6 @@ const Header = ({ opened, toggle }) => {
           <TextInput label="Email" placeholder="your@email.com" radius="md" withAsterisk />
           <PasswordInput label="Password" placeholder="********" radius="md" withAsterisk />
           <Button variant="strong" fullWidth mt="md">Login</Button>
-          <Divider label="OR" labelPosition="center" my="md" />
-          <Button variant="default" fullWidth>Sign in with Google</Button>
         </Stack>
       </Modal>
 
