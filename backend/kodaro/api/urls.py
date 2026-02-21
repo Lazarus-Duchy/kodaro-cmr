@@ -39,7 +39,13 @@ from Purchases.views import (
     PurchasesOverPriceView,
     PurchaseStatsView,
 )
-
+from Pracownicy.views import (
+    PracownikListCreateView,
+    PracownikDetailView,
+    PracownikStatsView,
+    KontaktAwaryjnyListCreateView,
+    KontaktAwaryjnyDetailView,
+)
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────────────────
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
@@ -102,4 +108,12 @@ urlpatterns = [
 
     # All purchases by client's country  →  /purchases/by-country/Poland/
     path("purchases/by-country/<str:country>/", PurchasesByClientCountryView.as_view(), name="purchases-by-country"),
+    
+    path("pracownicy/", PracownikListCreateView.as_view(), name="pracownik-list"),
+    path("pracownicy/stats/", PracownikStatsView.as_view(), name="pracownik-stats"),
+    path("pracownicy/<uuid:pk>/", PracownikDetailView.as_view(), name="pracownik-detail"),
+
+    # ── Kontakty awaryjne (nested under pracownik) ────────────────────────────
+    path("pracownicy/<uuid:pracownik_pk>/kontakty/", KontaktAwaryjnyListCreateView.as_view(), name="kontakt-awaryjny-list"),
+    path("pracownicy/<uuid:pracownik_pk>/kontakty/<uuid:pk>/", KontaktAwaryjnyDetailView.as_view(), name="kontakt-awaryjny-detail"),
 ]
