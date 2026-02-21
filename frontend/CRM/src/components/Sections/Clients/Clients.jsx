@@ -11,12 +11,12 @@ import SummaryCard from '../../Features/SummaryCard/SummaryCard';
 import { DateTimePicker } from '@mantine/dates';
 
 const tableStructure = [
-  { name: 'id',         label: 'ID',         type: 'number', isEditable: false, required: false},
-  { name: 'name',       label: 'Name',        type: 'string', isEditable: true,  required: true },
-  { name: 'email',      label: 'Email',       type: 'string', isEditable: true,  required: false },
-  { name: 'phone',      label: 'Phone',       type: 'string', isEditable: true,  required: false },
-  { name: 'city',       label: 'City',        type: 'string', isEditable: true,  required: false },
-  { name: 'created_at', label: 'Created At',  type: 'date',   isEditable: false, required: false },
+  { name: 'id',         label: 'ID',          },
+  { name: 'name',       label: 'Name',        },
+  { name: 'email',      label: 'Email',       },
+  { name: 'phone',      label: 'Phone',       },
+  { name: 'city',       label: 'City',        },
+  { name: 'created_at', label: 'Created At',  },
 ];
 
 const tableValidation = {
@@ -30,25 +30,25 @@ const Clients = () => {
     { title: 'Active Clients', value: '—', desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
   ]);
 
-  const newRowForm = useForm({mode: 'uncontrolled', validate: tableValidation});
-  const editRowForm = useForm({mode: 'uncontrolled', validate: tableValidation});
+  const newRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
+  const editRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
 
   const newRowFields = [
-    <NumberInput key={newRowForm.key("id")} label={'id'} readOnly required {...newRowForm.getInputProps('id')} />,
-    <TextInput key={newRowForm.key("name")} label={'name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
-    <TextInput key={newRowForm.key("email")} label={'email'} withAsterisk required {...newRowForm.getInputProps('email')} />,
-    <TextInput key={newRowForm.key("phone")} label={'phone'} withAsterisk required {...newRowForm.getInputProps('phone')} />,
-    <TextInput key={newRowForm.key("city")} label={'city'} withAsterisk required {...newRowForm.getInputProps('city')} />,
-    <DateTimePicker key={newRowForm.key("created_at")} label={'created_at'} readOnly required {...newRowForm.getInputProps('created_at')}  />,
+    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly required {...newRowForm.getInputProps('id')} />,
+    <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
+    <TextInput key={newRowForm.key("email")} label={'Email'} withAsterisk required {...newRowForm.getInputProps('email')} />,
+    <TextInput key={newRowForm.key("phone")} label={'Phone'} withAsterisk required {...newRowForm.getInputProps('phone')} />,
+    <TextInput key={newRowForm.key("city")} label={'City'} withAsterisk required {...newRowForm.getInputProps('city')} />,
+    <DateTimePicker key={newRowForm.key("created_at")} label={'Created At'} readOnly required {...newRowForm.getInputProps('created_at')}  />,
   ]
 
   const editRowFields = [
-    <NumberInput key={editRowForm.key("id")} label={'id'} readOnly required {...editRowForm.getInputProps('id')} />,
-    <TextInput key={editRowForm.key("name")} label={'name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
-    <TextInput key={editRowForm.key("email")} label={'email'} withAsterisk required {...editRowForm.getInputProps('email')} />,
-    <TextInput key={editRowForm.key("phone")} label={'phone'} withAsterisk required {...editRowForm.getInputProps('phone')} />,
-    <TextInput key={editRowForm.key("city")} label={'city'} withAsterisk required {...editRowForm.getInputProps('city')} />,
-    <DateTimePicker key={editRowForm.key("created_at")} label={'created_at'} readOnly required {...editRowForm.getInputProps('created_at')}  />,
+    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly required {...editRowForm.getInputProps('id')} />,
+    <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
+    <TextInput key={editRowForm.key("email")} label={'Email'} withAsterisk required {...editRowForm.getInputProps('email')} />,
+    <TextInput key={editRowForm.key("phone")} label={'Phone'} withAsterisk required {...editRowForm.getInputProps('phone')} />,
+    <TextInput key={editRowForm.key("city")} label={'City'} withAsterisk required {...editRowForm.getInputProps('city')} />,
+    <DateTimePicker key={editRowForm.key("created_at")} label={'Created At'} readOnly required {...editRowForm.getInputProps('created_at')}  />,
   ]
 
   /*

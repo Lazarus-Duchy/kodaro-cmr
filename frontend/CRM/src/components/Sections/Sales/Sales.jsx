@@ -4,18 +4,10 @@ import { Area, AreaChart, CartesianGrid, Cell, Label, Legend, Line, LineChart, P
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
 import { useForm } from "@mantine/form";
-
-const categories = [
-  'cat1', 'cat2'
-];
-
-const tableData = [
-  {id: 0, name: 'Product', price: 1, sku: 10, "category": "cat1"},
-  {id: 1, name: 'Product 2', price: 2, sku: 10, "category": "cat2"},
-]
+import { useState } from "react";
 
 const tableValidation = {
-  price: (value) => (value >= 0 ? null : 'Price must be greater or equal 0'),
+
 }
 
 const tableStructure = [
@@ -26,19 +18,14 @@ const tableStructure = [
   {name: 'price', label: 'Price', type: 'number', isEditable: true, required: true, default: 1}, 
 ];
 
-const stats = [
-  { title: 'Total sales', value: '12500', diff: 34, icon: <IconShoppingBag size={24} /> },
-  { title: 'Hot product sales', value: '188', diff: -12, icon: <IconFlame size={24} /> },
-];
-
-const totalSalesData = [
+const temptotalSalesData = [
   { name: 'Jan', sales: 4000 }, { name: 'Feb', sales: 3000 }, { name: 'Mar', sales: 2000 },
   { name: 'Apr', sales: 2780 }, { name: 'May', sales: 1890 }, { name: 'Jun', sales: 6390 },
   { name: 'Jul', sales: 3490 }, { name: 'Aug', sales: 5120 }, { name: 'Sep', sales: 6200 },
   { name: 'Oct', sales: 8400 }, { name: 'Nov', sales: 12500 }, { name: 'Dec', sales: 13650 },
 ];
 
-const productSalesPercentageData = [
+const tempproductSalesPercentageData = [
   { name: 'p1', value: 10},
   { name: 'p2', value: 50},
   { name: 'p3', value: 40},
@@ -48,23 +35,34 @@ const colors = ['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d', '#a4de6c'];
 const RADIAN = Math.PI / 180;
 
 const Sales = () => {
-  const newRowForm = useForm({mode: 'uncontrolled', validate: tableValidation});
-  const editRowForm = useForm({mode: 'uncontrolled', validate: tableValidation});
+  const [tableData, setTableData] = useState([{id: 0, name: 'Product', price: 1, sku: 10, "category": "cat1"},{id: 1, name: 'Product 2', price: 2, sku: 10, "category": "cat2"}]);
+  const [stats, setStats] = useState([
+    { title: 'Total sales',  value: '—', icon: <IconShoppingBag size={24} /> },
+    { title: 'Hot category sales', value: '—', icon: <IconFlame size={24} /> },
+  ]);
+  const [hotProductCategory, sethHotProductCategory] = useState("temp");
+  const [totalSalesData, setTotalSalesData] = useState(temptotalSalesData);
+  const [productSalesPercentageData, setProductSalesPercentageData] = useState(tempproductSalesPercentageData);
+
+  const [productCategoriesData, setProductCategoriesData] = useState(['cat1', 'cat2']);
+
+  const newRowForm = useForm({mode: 'uncontrolled', initialValues: {category: productCategoriesData[0]}, validate: tableValidation});
+  const editRowForm = useForm({mode: 'uncontrolled', initialValues: {category: productCategoriesData[0]}, validate: tableValidation});
 
   const newRowFields = [
-    <NumberInput key={newRowForm.key("id")} label={'id'} readOnly withAsterisk required {...newRowForm.getInputProps('id')} />,
-    <TextInput key={newRowForm.key("name")} label={'name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
-    <NumberInput key={newRowForm.key("sku")} min={0} label={'sku'} withAsterisk required {...newRowForm.getInputProps('sku')} />,
-    <NumberInput key={newRowForm.key("price")} min={0} label={'price'} withAsterisk required {...newRowForm.getInputProps('price')} />,
-    <Select key={newRowForm.key("category")} data={categories} label={'category'} withAsterisk required {...newRowForm.getInputProps('category')}/>
+    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly withAsterisk required {...newRowForm.getInputProps('id')} />,
+    <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
+    <NumberInput key={newRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...newRowForm.getInputProps('sku')} />,
+    <NumberInput key={newRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...newRowForm.getInputProps('price')} />,
+    <Select key={newRowForm.key("category")} data={productCategoriesData} label={'Category'} withAsterisk required {...newRowForm.getInputProps('category')}/>
   ]
 
   const editRowFields = [
-    <NumberInput key={editRowForm.key("id")} label={'id'} readOnly withAsterisk required {...editRowForm.getInputProps('id')} />,
-    <TextInput key={editRowForm.key("name")} label={'name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
-    <NumberInput key={editRowForm.key("sku")} min={0} label={'sku'} withAsterisk required {...editRowForm.getInputProps('sku')} />,
-    <NumberInput key={editRowForm.key("price")} min={0} label={'price'} withAsterisk required {...editRowForm.getInputProps('price')} />,
-    <Select key={editRowForm.key("category")} data={categories} label={'category'} withAsterisk required {...editRowForm.getInputProps('category')}/>
+    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly withAsterisk required {...editRowForm.getInputProps('id')} />,
+    <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
+    <NumberInput key={editRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...editRowForm.getInputProps('sku')} />,
+    <NumberInput key={editRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...editRowForm.getInputProps('price')} />,
+    <Select key={editRowForm.key("category")} data={productCategoriesData} label={'Category'} withAsterisk required {...editRowForm.getInputProps('category')}/>
   ]
   
   const MyCustomPie = (props) => <Sector {...props} fill={colors[props.index % colors.length]} />;
@@ -94,13 +92,13 @@ const Sales = () => {
       <Grid>
         {stats.map((stat, index) => (
           <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} />
+            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} desc={stat.desc} />
           </Grid.Col>
         ))}
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Paper withBorder p="md" radius="md">
             <Group justify="space-between">
-            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Product Sales Percentage</Text>
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Product Category Sales Percentage</Text>
             <Text c="clientFlow.4"><IconPercentage size={24} /></Text>
             </Group>
             <Group align="flex-end" gap="xs" mt={10}>
@@ -111,6 +109,7 @@ const Sales = () => {
                 </PieChart>
               </ResponsiveContainer>
             </Group>
+            <Text size="sm" c="dimmed" mt="xs">Hottest category: {hotProductCategory}</Text>
           </Paper>
         </Grid.Col>
       </Grid>
