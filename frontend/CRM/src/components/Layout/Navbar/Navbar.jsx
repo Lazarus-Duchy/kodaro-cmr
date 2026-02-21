@@ -36,7 +36,7 @@ const navlinks = [
           }
         ] 
       },
-      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
+      { href: 'reports', label: 'Yearly sales report', icon: <IconChartBar size={20} stroke={1.5} /> },
     ]
   }
 ];
