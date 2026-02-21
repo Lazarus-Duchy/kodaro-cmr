@@ -1,19 +1,15 @@
 import { useEffect, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconEdit, IconSearch, IconSelector, IconTrash } from '@tabler/icons-react';
-import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, NumberInput, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
-import { DateInput, DatePickerInput, DateTimePicker } from '@mantine/dates';
+import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useForm } from '@mantine/form';
 
-const Th = ({ children, reversed, sorted, onSort })  => {
+const Th = ({ children, reversed, sorted, onSort }) => {
   const Icon = sorted ? (reversed ? IconChevronUp : IconChevronDown) : IconSelector;
   return (
     <Table.Th>
       <UnstyledButton onClick={onSort}>
         <Group justify="space-between">
-          <Text fw={500} fz="sm">
-            {children}
-          </Text>
+          <Text fw={500} fz="sm">{children}</Text>
           <Center>
             <Icon size={16} stroke={1.5} />
           </Center>
@@ -21,55 +17,53 @@ const Th = ({ children, reversed, sorted, onSort })  => {
       </UnstyledButton>
     </Table.Th>
   );
-}
+};
 
 function filterData(data, search) {
   const query = search.toLowerCase().trim();
-
+  if (!data.length) return [];
   return data.filter((item) =>
-    keys(data[0]).some((key) => item[key].toString().toLowerCase().includes(query))
+    keys(item).some((key) => item[key]?.toString().toLowerCase().includes(query))
   );
 }
 
 function sortData(data, payload) {
   const { sortBy } = payload;
-
-  if (!sortBy) {
-    return filterData(data, payload.search);
-  }
-
+  if (!sortBy) return filterData(data, payload.search);
   return filterData(
     [...data].sort((a, b) => {
-      if (payload.reversed) {
-        return b[sortBy].toString().localeCompare(a[sortBy]);
-      }
-
+      if (payload.reversed) return b[sortBy].toString().localeCompare(a[sortBy]);
       return a[sortBy].toString().localeCompare(b[sortBy]);
     }),
     payload.search
   );
 }
 
-export function TableSort({ 
-  structure, 
-  data, 
-  addRowsTitle = "Add new row", 
+export function TableSort({
+  structure,
+  data,
+  onAdd,
+  onEdit,
+  onDelete,
+  addRowsTitle = "Add new row",
   addRowBtnInfo = "Add new row",
-  editRowTitle = "Edit row", 
-  deleteRowTitle = "Delete row", 
+  editRowTitle = "Edit row",
+  deleteRowTitle = "Delete row",
   deleteRowInfo = "Are you sure you want to delete this row? This action is destructive, this data will be gone forever!",
-  canAddRows = false, 
-  canEditRows = false, 
+  canAddRows = false,
+  canEditRows = false,
   canDeleteRows = false,
-  validation = {}
+  newRowForm,
+  editRowForm,
+  editRowFields,
+  newRowFields,
 }) {
-  // Sort and Search
   const [search, setSearch] = useState('');
   const [sortedData, setSortedData] = useState(data);
   const [sortBy, setSortBy] = useState(null);
   const [reverseSortDirection, setReverseSortDirection] = useState(false);
-
   const [selectedRow, setSelectedRow] = useState(null);
+  const [error, setError] = useState(null);
 
   // Modals
   const [newRowLoading, { open: newRowLoadingStart, close: newRowLoadingEnd }] = useDisclosure(false);
@@ -79,54 +73,64 @@ export function TableSort({
   const [editRowOpened, { open: editRowOpen, close: editRowClose }] = useDisclosure(false);
   const [deleteRowOpened, { open: deleteRowOpen, close: deleteRowClose }] = useDisclosure(false);
 
-  const newRowForm = useForm({
-    mode: 'uncontrolled',
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
-    validate: validation
-  });
-
-  const editRowForm = useForm({
-    mode: 'uncontrolled',
-
-    validate: validation
-  });
-  // Handling Data Modifications
-  const handleAddRow = async () => {
+  const handleAddRow = async (values) => {
     newRowLoadingStart();
-    const timer = setTimeout(() => {
-      newRowLoadingEnd();
+    setError(null);
+    try {
+      await onAdd?.(values);
       newRowClose();
-    }, 1000);
-    
-  }
+      newRowForm.reset();
+    } catch (err) {
+      setError(err?.response?.data?.detail ?? "Failed to add row. Please try again.");
+    } finally {
+      newRowLoadingEnd();
+    }
+  };
 
-  const handleEditRow = async () => {
+  const handleEditRow = async (values) => {
     editRowLoadingStart();
-
-    const timer = setTimeout(() => {
-      editRowLoadingEnd();
+    setError(null);
+    try {
+      await onEdit?.(selectedRow.id, values);
       editRowClose();
-    }, 1000);
-  }
+    } catch (err) {
+      setError(err?.response?.data?.detail ?? "Failed to update row. Please try again.");
+    } finally {
+      editRowLoadingEnd();
+    }
+  };
 
   const handleEditOpen = (row) => {
     setSelectedRow(row);
+    setError(null);
     editRowForm.setInitialValues(row);
     editRowForm.setValues(row);
-
     editRowOpen();
-  }
+  };
 
   const handleDeleteRow = async () => {
     deleteRowLoadingStart();
-
-    const timer = setTimeout(() => {
-      deleteRowLoadingEnd();
+    setError(null);
+    try {
+      await onDelete?.(selectedRow.id);
       deleteRowClose();
-    }, 1000);
-  }
+    } catch (err) {
+      setError(err?.response?.data?.detail ?? "Failed to delete row. Please try again.");
+    } finally {
+      deleteRowLoadingEnd();
+    }
+  };
 
-  // Handling Data Visualization
+  const handleDeleteOpen = (row) => {
+    setSelectedRow(row);
+    setError(null);
+    deleteRowOpen();
+  };
+
+  // ── Sorting & Search ─────────────────────────────────────────────────────────
+
   const setSorting = (field) => {
     const reversed = field === sortBy ? !reverseSortDirection : false;
     setReverseSortDirection(reversed);
@@ -140,8 +144,23 @@ export function TableSort({
     setSortedData(sortData(data, { sortBy, reversed: reverseSortDirection, search: value }));
   };
 
+  useEffect(() => {
+    let tempData = {};
+    structure.forEach((column) => {
+      tempData[column.name] = column.default;
+    });
+    newRowForm.setValues(tempData);
+    newRowForm.setInitialValues(tempData);
+  }, []);
+
+  useEffect(() => {
+    setSortedData(data);
+  }, [data]);
+
   const head = structure.map((column, index) => (
-    <Th key={index} sorted={sortBy === column.name} reversed={reverseSortDirection} onSort={() => setSorting(column.name)}>{column.label}</Th>
+    <Th key={index} sorted={sortBy === column.name} reversed={reverseSortDirection} onSort={() => setSorting(column.name)}>
+      {column.label}
+    </Th>
   ));
 
   const rows = sortedData.map((row) => (
@@ -149,121 +168,100 @@ export function TableSort({
       {structure.map((column, index) => (
         <Table.Td key={index}>{row[column.name]}</Table.Td>
       ))}
-      {(canEditRows || canDeleteRows) && 
+      {(canEditRows || canDeleteRows) && (
         <Table.Td>
           <Group grow>
-            {canEditRows && <Button variant='light' onClick={(event) => {handleEditOpen(row)}}><IconEdit size={20} stroke={1.5}/></Button>}
-            {canDeleteRows && <Button variant='outline' color="red" onClick={(event) => {deleteRowOpen(row)}}><IconTrash size={20} stroke={1.5}/></Button>}
+            {canEditRows && (
+              <Button variant="light" onClick={() => handleEditOpen(row)}>
+                <IconEdit size={20} stroke={1.5} />
+              </Button>
+            )}
+            {canDeleteRows && (
+              <Button variant="outline" color="red" onClick={() => handleDeleteOpen(row)}>
+                <IconTrash size={20} stroke={1.5} />
+              </Button>
+            )}
           </Group>
         </Table.Td>
-      }
-
+      )}
     </Table.Tr>
   ));
 
-  useEffect(() => {
-    let tempData = {}
-    structure.forEach(column => {
-      tempData[column.name] = column.default;
-    });
-    
-    newRowForm.setValues(tempData);
-    newRowForm.setInitialValues(tempData);
-  }, [])
-
   return (
     <>
+      {/* ── Add Modal ── */}
       <Modal opened={newRowOpened} onClose={newRowClose} title={addRowsTitle}>
         <LoadingOverlay visible={newRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-        <form onSubmit={newRowForm.onSubmit((values) => {handleAddRow()})}>
+        <form onSubmit={newRowForm.onSubmit(handleAddRow)}>
           <Stack>
-            {
-              structure.map((column) => {
-              let inputElement;
-              switch (column.type) {
-                case "number": inputElement = (<NumberInput key={newRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...newRowForm.getInputProps(column.name)} />); break;
-                case "string": inputElement = (<TextInput key={newRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...newRowForm.getInputProps(column.name)} />); break;
-                case "date": inputElement = (<DateTimePicker key={newRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...newRowForm.getInputProps(column.name)}/>); break;
-              }
-
-              return inputElement;
-              })
-            }
+            {newRowFields}
+            {error && <Text c="red" size="sm">{error}</Text>}
             <Group justify="flex-end">
-              <Button variant="outline" color="red" onClick={() => {newRowClose()}}>Cancel</Button>
-              <Button type='submit'>Add</Button>
+              <Button variant="outline" color="red" onClick={newRowClose}>Cancel</Button>
+              <Button type="submit">Add</Button>
             </Group>
           </Stack>
         </form>
       </Modal>
+
+      {/* ── Edit Modal ── */}
       <Modal opened={editRowOpened} onClose={editRowClose} title={editRowTitle}>
         <LoadingOverlay visible={editRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
-        <form onSubmit={editRowForm.onSubmit((values) => {handleEditRow()})}>
+        <form onSubmit={editRowForm.onSubmit(handleEditRow)}>
           <Stack>
-            {
-              structure.map((column) => {
-              let inputElement;
-              switch (column.type) {
-                case "number": inputElement = (<NumberInput key={editRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...editRowForm.getInputProps(column.name)} />); break;
-                case "string": inputElement = (<TextInput key={editRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...editRowForm.getInputProps(column.name)} />); break;
-                case "date": inputElement = (<DateTimePicker key={editRowForm.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...editRowForm.getInputProps(column.name)}/>); break;
-              }
-
-              return inputElement;
-              })
-            }
+            {editRowFields}
+            {error && <Text c="red" size="sm">{error}</Text>}
             <Group justify="flex-end">
-              <Button variant="outline" color="red" onClick={() => {editRowClose()}}>Dismiss changes</Button>
-              <Button type='submit'>Save changes</Button>
+              <Button variant="outline" color="red" onClick={editRowClose}>Dismiss changes</Button>
+              <Button type="submit">Save changes</Button>
             </Group>
           </Stack>
         </form>
       </Modal>
+
+      {/* ── Delete Modal ── */}
       <Modal opened={deleteRowOpened} onClose={deleteRowClose} title={deleteRowTitle}>
         <LoadingOverlay visible={deleteRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
         <Stack>
           <Text size="sm">{deleteRowInfo}</Text>
+          {error && <Text c="red" size="sm">{error}</Text>}
           <Group justify="flex-end">
-            <Button variant="default" onClick={() => {deleteRowClose()}}>Cancel</Button>
+            <Button variant="default" onClick={deleteRowClose}>Cancel</Button>
             <Button color="red" onClick={handleDeleteRow}>Delete row</Button>
           </Group>
         </Stack>
-        
       </Modal>
 
+      {/* ── Table ── */}
       <ScrollArea>
         <Flex direction="row" gap="xs">
           <TextInput
             placeholder="Search by any field"
             mb="md"
-            w={canAddRows ? "85%": "100%"}
+            w={canAddRows ? "85%" : "100%"}
             leftSection={<IconSearch size={16} stroke={1.5} />}
             value={search}
             onChange={handleSearchChange}
           />
           {canAddRows && <Button onClick={newRowOpen} w="15%">{addRowBtnInfo}</Button>}
         </Flex>
-      <Table verticalSpacing="sm" horizontalSpacing="md" miw={700} layout="fixed" highlightOnHover stickyHeader stickyHeaderOffset={60}>
-        <Table.Tbody>
-          <Table.Tr>
-            {head}
-          </Table.Tr>
-        </Table.Tbody>
-        <Table.Tbody>
-          {rows.length > 0 ? (
-            rows
-          ) : (
-            <Table.Tr>
-              <Table.Td colSpan={Object.keys(data[0]).length}>
-                <Text fw={500} ta="center">
-                  Nothing found
-                </Text>
-              </Table.Td>
-            </Table.Tr>
-          )}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+        <Table verticalSpacing="sm" horizontalSpacing="md" miw={700} layout="fixed" highlightOnHover stickyHeader stickyHeaderOffset={60}>
+          <Table.Tbody>
+            <Table.Tr>{head}</Table.Tr>
+          </Table.Tbody>
+          <Table.Tbody>
+            {rows.length > 0 ? (
+              rows
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={structure.length}>
+                  <Text fw={500} ta="center">Nothing found</Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
+          </Table.Tbody>
+        </Table>
+      </ScrollArea>
     </>
   );
 }
