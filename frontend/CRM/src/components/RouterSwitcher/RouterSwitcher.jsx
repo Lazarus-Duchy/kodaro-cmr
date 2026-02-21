@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import ErrorScreen from "../Modals/ErrorScreen/ErrorScreen";
 import Contacts from "../Sections/Contacts/Contacts";
 import Home from "../Sections/Home/Home";
+import Sales from "../Sections/Sales/Sales";
 import Reports from "../Sections/Reports/Reports";
 import Marketing from "../Sections/Marketing/Marketing";
 import Clients from "../Sections/Clients/Clients";
@@ -27,6 +28,9 @@ export const RouterSwitcher = () => {
       } />
       <Route path="/reports" element={
         <ProtectedRoute><Reports /></ProtectedRoute>
+      } />
+      <Route path="/sales" element={
+        <ProtectedRoute><Sales /></ProtectedRoute>
       } />
     </Routes>
   );

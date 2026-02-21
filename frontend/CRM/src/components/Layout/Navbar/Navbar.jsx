@@ -8,7 +8,8 @@ import {
   IconSettings, 
   IconLogout,
   IconSun,
-  IconMoonStars 
+  IconMoonStars, 
+  IconShoppingCart
 } from '@tabler/icons-react';
 
 const navlinks = [
@@ -37,6 +38,7 @@ const navlinks = [
         ] 
       },
       { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
+      { href: 'sales', label: 'Sales', icon: <IconShoppingCart size={20} stroke={1.5} /> },
     ]
   }
 ];
