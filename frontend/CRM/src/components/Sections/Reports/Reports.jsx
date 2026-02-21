@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   Grid, Paper, Text, Title, Stack, Box, Loader, Center,
-import { useEffect, useState } from 'react';
-import {
-  Grid, Paper, Text, Title, Stack, Box, Loader, Center,
 } from '@mantine/core';
 import {
   IconCurrencyDollar, IconUsers, IconShoppingCart,
-import {
-  IconCurrencyDollar, IconUsers, IconShoppingCart,
 } from '@tabler/icons-react';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -45,69 +38,6 @@ function groupByMonth(purchases) {
 }
 
 const Reports = () => {
-  const [chartData, setChartData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [summaryStats, setSummaryStats] = useState({
-    totalRevenue: 0,
-    totalPurchases: 0,
-    uniqueClients: 0,
-  });
-
-  useEffect(() => {
-    const fetchPurchases = async () => {
-      try {
-        const data = await get('/purchases/');
-        const purchases = Array.isArray(data) ? data : (data.results ?? []);
-
-        // Build chart data
-        setChartData(groupByMonth(purchases));
-
-        // Build summary stats
-        const totalRevenue = purchases.reduce(
-          (sum, p) => sum + parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1), 0
-        );
-        const uniqueClients = new Set(purchases.map((p) => p.client)).size;
-
-        setSummaryStats({
-          totalRevenue,
-          totalPurchases: purchases.length,
-          uniqueClients,
-        });
-      } catch (error) {
-        console.error('Failed to fetch purchases:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPurchases();
-  }, []);
-
-  const stats = [
-    {
-      title: 'Total Revenue',
-      value: `$${summaryStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      icon: <IconCurrencyDollar size={24} />,
-    },
-    {
-      title: 'Total Purchases',
-      value: String(summaryStats.totalPurchases),
-      icon: <IconShoppingCart size={24} />,
-    },
-    {
-      title: 'Unique Clients',
-      value: String(summaryStats.uniqueClients),
-      icon: <IconUsers size={24} />,
-    },
-  ];
-
-  if (loading) {
-    return (
-      <Center h={400}>
-        <Loader size="lg" />
-      </Center>
-    );
-  }
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [summaryStats, setSummaryStats] = useState({
