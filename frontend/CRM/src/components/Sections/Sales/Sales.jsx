@@ -1,106 +1,285 @@
-import { Box, Checkbox, Flex, Grid, Group, NumberInput, Paper, ScrollArea, Select, Stack, Text, TextInput, Title } from "@mantine/core"
-import { IconFlame, IconPercentage, IconShoppingBag } from "@tabler/icons-react";
-import { Area, AreaChart, CartesianGrid, Cell, Label, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from "recharts"
+import { Box, Checkbox, Flex, Grid, Paper, ScrollArea, Stack, Text, TextInput, Title, NumberInput, Loader, Center, Select } from "@mantine/core";
+import { IconShoppingBag, IconCurrencyDollar } from "@tabler/icons-react";
+import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
+import { useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
-import { useState } from "react";
-import { randomId, useListState } from "@mantine/hooks";
+import { useListState } from "@mantine/hooks";
+import { DateInput } from "@mantine/dates";
+import { get, post, patch, del } from "../../../api";
 
-const tableValidation = {
+// ─── Constants ────────────────────────────────────────────────────────────────
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const COLORS = ["#8884d8", "#83a6ed", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
+const RADIAN = Math.PI / 180;
+const CURRENT_YEAR = new Date().getFullYear();
+
+const CURRENCIES = ["USD", "EUR", "GBP", "PLN", "CHF", "JPY", "CAD", "AUD"];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function buildChartData(purchases) {
+  const productNames = [...new Set(purchases.map((p) => p.product_name ?? p.product ?? "Unknown"))];
+
+  const monthMap = {};
+  MONTH_NAMES.forEach((name, i) => {
+    monthMap[i + 1] = { name };
+    productNames.forEach((pName) => { monthMap[i + 1][pName] = 0; });
+  });
+
+  purchases.forEach((p) => {
+    const d = new Date(p.date);
+    if (d.getFullYear() !== CURRENT_YEAR) return;
+    const month = d.getMonth() + 1;
+    const productName = p.product_name ?? p.product ?? "Unknown";
+    const value = parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1);
+    monthMap[month][productName] += value;
+  });
+
+  return Object.values(monthMap);
 }
 
-const tableStructure = [
-  {name: 'id', label: 'ID', type: 'number', isEditable: false, required: true, default: 0}, 
-  {name: 'name', label: 'Name', type: 'string', isEditable: true, required: true}, 
-  {name: 'sku', label: 'Sku', type: 'number', isEditable: true, required: true}, 
-  {name: 'category', label: 'Category', type: 'enum', isEditable: true, required: true}, 
-  {name: 'price', label: 'Price', type: 'number', isEditable: true, required: true, default: 1}, 
+function buildProductRevenuePie(purchases) {
+  const map = {};
+  purchases.forEach((p) => {
+    const name = p.product_name ?? p.product ?? "Unknown";
+    const value = parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1);
+    map[name] = (map[name] ?? 0) + value;
+  });
+  return Object.entries(map).map(([name, value]) => ({ name, value: Math.round(value) }));
+}
+
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  if (percent < 0.05) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
+// ─── Table structure ──────────────────────────────────────────────────────────
+
+const purchaseTableStructure = [
+  { name: "product_name", label: "Product",    type: "string", isEditable: false, required: false },
+  { name: "client_name",  label: "Client",     type: "string", isEditable: false, required: false },
+  { name: "quantity",     label: "Qty",        type: "number", isEditable: true,  required: true, default: 1 },
+  { name: "unit_price",   label: "Unit Price", type: "number", isEditable: true,  required: true, default: 0 },
+  { name: "currency",     label: "Currency",   type: "string", isEditable: true,  required: true },
+  { name: "date",         label: "Date",       type: "string", isEditable: true,  required: true },
 ];
 
-const tempProductSalesData = [
-  { name: 'Jan', p1: 4000, p2: 3000, p3: 6000 }, 
-  { name: 'Feb', p1: 3000, p2: 3500, p3: 5500 }, 
-  { name: 'Mar', p1: 2000, p2: 2700, p3: 4000 },
-  { name: 'Apr', p1: 2780, p2: 2500, p3: 3500 }, 
-  { name: 'May', p1: 1890, p2: 3000, p3: 6000 }, 
-  { name: 'Jun', p1: 6390, p2: 3500, p3: 7200 },
-  { name: 'Jul', p1: 3490, p2: 2300, p3: 6700 }, 
-  { name: 'Aug', p1: 5120, p2: 2400, p3: 5000 }, 
-  { name: 'Sep', p1: 6200, p2: 4000, p3: 4000 },
-  { name: 'Oct', p1: 8400, p2: 5000, p3: 1000 }, 
-  { name: 'Nov', p1: 12500, p2: 6000, p3: 300 }, 
-  { name: 'Dec', p1: 13650, p2: 7000, p3: 20 },
-];
+const purchaseValidation = {
+  product: (v) => v ? null : "Product is required",
+  client:  (v) => v ? null : "Client is required",
+  quantity:   (v) => (v > 0 ? null : "Must be > 0"),
+  unit_price: (v) => (v >= 0 ? null : "Must be ≥ 0"),
+  currency:   (v) => v ? null : "Currency is required",
+  date:       (v) => v ? null : "Date is required",
+};
 
-const tempproductSalesPercentageData = [
-  { name: 'p1', value: 10},
-  { name: 'p2', value: 50},
-  { name: 'p3', value: 40},
-]
-
-const tempProductsDisplay = [
-  {name: 'p1', label: 'P1', checked: true, key: randomId()},
-  {name: 'p2', label: 'P2', checked: true, key: randomId()},
-  {name: 'p3', label: 'P3', checked: true, key: randomId()},
-]
-
-const colors = ['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d', '#a4de6c'];
-const RADIAN = Math.PI / 180;
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const Sales = () => {
-  const [tableData, setTableData] = useState([{id: 0, name: 'Product', price: 1, sku: 10, "category": "cat1"},{id: 1, name: 'Product 2', price: 2, sku: 10, "category": "cat2"}]);
+  const [loading, setLoading] = useState(true);
+
+  // Purchases table state
+  const [purchases, setPurchases] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
+  const [clientOptions, setClientOptions]   = useState([]);
+
+  // Chart state
+  const [chartData, setChartData] = useState([]);
+  const [pieData, setPieData]     = useState([]);
+  const [productsDisplay, productsDisplayHandlers] = useListState([]);
+
   const [stats, setStats] = useState([
-    { title: 'Total sales',  value: '—', icon: <IconShoppingBag size={24} /> },
-    { title: 'Hot category sales', value: '—', icon: <IconFlame size={24} /> },
+    { title: "Total Sales Revenue", value: "—", icon: <IconCurrencyDollar size={24} /> },
+    { title: "Total Purchases",     value: "—", icon: <IconShoppingBag size={24} /> },
   ]);
-  const [hotProductCategory, sethHotProductCategory] = useState("temp");
-  const [productSalesData, setProductSalesData] = useState(tempProductSalesData);
-  const [productSalesPercentageData, setProductSalesPercentageData] = useState(tempproductSalesPercentageData);
-  const [productsDisplayData, productsDisplayDataHandlers] = useListState(tempProductsDisplay);
 
-  const displayAllChecked = productsDisplayData.every((value) => value.checked);
-  const displayIndeterminate = productsDisplayData.some((value) => value.checked) && !displayAllChecked;
+  // ── Forms ──────────────────────────────────────────────────────────────────
 
-  const [productCategoriesData, setProductCategoriesData] = useState(['cat1', 'cat2']);
+  const newRowForm  = useForm({ mode: "uncontrolled", validate: purchaseValidation });
+  const editRowForm = useForm({ mode: "uncontrolled", validate: purchaseValidation });
 
-  const newRowForm = useForm({mode: 'uncontrolled', initialValues: {category: productCategoriesData[0]}, validate: tableValidation});
-  const editRowForm = useForm({mode: 'uncontrolled', initialValues: {category: productCategoriesData[0]}, validate: tableValidation});
+  const purchaseFields = (form) => [
+    <Select
+      key={form.key("product")}
+      label="Product"
+      data={productOptions}
+      withAsterisk
+      required
+      searchable
+      {...form.getInputProps("product")}
+    />,
+    <Select
+      key={form.key("client")}
+      label="Client"
+      data={clientOptions}
+      withAsterisk
+      required
+      searchable
+      {...form.getInputProps("client")}
+    />,
+    <NumberInput
+      key={form.key("quantity")}
+      label="Quantity"
+      min={1}
+      withAsterisk
+      required
+      {...form.getInputProps("quantity")}
+    />,
+    <NumberInput
+      key={form.key("unit_price")}
+      label="Unit Price"
+      min={0}
+      decimalScale={2}
+      withAsterisk
+      required
+      {...form.getInputProps("unit_price")}
+    />,
+    <Select
+      key={form.key("currency")}
+      label="Currency"
+      data={CURRENCIES}
+      withAsterisk
+      required
+      {...form.getInputProps("currency")}
+    />,
+    <DateInput
+      key={form.key("date")}
+      label="Date"
+      withAsterisk
+      required
+      valueFormat="YYYY-MM-DD"
+      {...form.getInputProps("date")}
+    />,
+  ];
 
-  const newRowFields = [
-    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly required {...newRowForm.getInputProps('id')} />,
-    <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
-    <NumberInput key={newRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...newRowForm.getInputProps('sku')} />,
-    <NumberInput key={newRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...newRowForm.getInputProps('price')} />,
-    <Select key={newRowForm.key("category")} data={productCategoriesData} label={'Category'} withAsterisk required {...newRowForm.getInputProps('category')}/>
-  ]
+  const newRowFields  = purchaseFields(newRowForm);
+  const editRowFields = purchaseFields(editRowForm);
 
-  const editRowFields = [
-    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly required {...editRowForm.getInputProps('id')} />,
-    <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
-    <NumberInput key={editRowForm.key("sku")} min={0} label={'SKU'} withAsterisk required {...editRowForm.getInputProps('sku')} />,
-    <NumberInput key={editRowForm.key("price")} min={0} label={'Price'} withAsterisk required {...editRowForm.getInputProps('price')} />,
-    <Select key={editRowForm.key("category")} data={productCategoriesData} label={'Category'} withAsterisk required {...editRowForm.getInputProps('category')}/>
-  ]
-  
-  const MyCustomPie = (props) => <Sector {...props} fill={colors[props.index % colors.length]} />;
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-    if (cx == null || cy == null || innerRadius == null || outerRadius == null) {
-      return null;
-    }
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const ncx = Number(cx);
-    const x = ncx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-    const ncy = Number(cy);
-    const y = ncy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
+  // ── Fetch on mount ─────────────────────────────────────────────────────────
 
-    return (
-      <text x={x} y={y} fill="white" textAnchor={x > ncx ? 'start' : 'end'} dominantBaseline="central">
-        {`${((percent ?? 1) * 100).toFixed(0)}%`}
-      </text>
-    );
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [purchasesData, productsData, clientsData] = await Promise.all([
+          get("/purchases/"),
+          get("/products/"),
+          get("/clients/"),
+        ]);
+
+        const purchaseList = Array.isArray(purchasesData) ? purchasesData : (purchasesData.results ?? []);
+        const productList  = Array.isArray(productsData)  ? productsData  : (productsData.results  ?? []);
+        const clientList   = Array.isArray(clientsData)   ? clientsData   : (clientsData.results   ?? []);
+
+        // Dropdown options
+        setProductOptions(productList.map((p) => ({ value: p.id, label: p.name })));
+        setClientOptions(clientList.map((c)   => ({ value: c.id, label: c.name })));
+
+        // Purchases table rows — flatten for display
+        setPurchases(purchaseList.map((p) => ({
+          id:           p.id,
+          product_name: p.product_name ?? p.product ?? "—",
+          client_name:  p.client_name  ?? p.client  ?? "—",
+          quantity:     p.quantity,
+          unit_price:   parseFloat(p.unit_price ?? 0),
+          currency:     p.currency,
+          date:         p.date,
+          // keep raw IDs for edit form pre-fill
+          product:      p.product,
+          client:       p.client,
+        })));
+
+        // Charts
+        setChartData(buildChartData(purchaseList));
+        setPieData(buildProductRevenuePie(purchaseList));
+
+        const uniqueNames = [...new Set(purchaseList.map((p) => p.product_name ?? p.product ?? "Unknown"))];
+        productsDisplayHandlers.setState(uniqueNames.map((name) => ({ name, label: name, checked: true })));
+
+        const totalRevenue = purchaseList.reduce(
+          (sum, p) => sum + parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1), 0
+        );
+        setStats([
+          { title: "Total Sales Revenue", value: `$${totalRevenue.toLocaleString("en-US", { maximumFractionDigits: 0 })}`, icon: <IconCurrencyDollar size={24} /> },
+          { title: "Total Purchases",     value: String(purchaseList.length), icon: <IconShoppingBag size={24} /> },
+        ]);
+      } catch (err) {
+        console.error("Failed to load sales data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []);
+
+  // ── CRUD ───────────────────────────────────────────────────────────────────
+
+  const handleAdd = async (values) => {
+    // Format date as YYYY-MM-DD string if it's a Date object
+    const payload = {
+      ...values,
+      date: values.date instanceof Date
+        ? values.date.toISOString().split("T")[0]
+        : values.date,
+    };
+    const created = await post("/purchases/", payload);
+    setPurchases((prev) => [{
+      id:           created.id,
+      product_name: created.product_name ?? created.product ?? "—",
+      client_name:  created.client_name  ?? created.client  ?? "—",
+      quantity:     created.quantity,
+      unit_price:   parseFloat(created.unit_price ?? 0),
+      currency:     created.currency,
+      date:         created.date,
+      product:      created.product,
+      client:       created.client,
+    }, ...prev]);
   };
+
+  const handleEdit = async (id, values) => {
+    const payload = {
+      ...values,
+      date: values.date instanceof Date
+        ? values.date.toISOString().split("T")[0]
+        : values.date,
+    };
+    const updated = await patch(`/purchases/${id}/`, payload);
+    setPurchases((prev) => prev.map((row) => row.id === id ? {
+      id:           updated.id,
+      product_name: updated.product_name ?? updated.product ?? "—",
+      client_name:  updated.client_name  ?? updated.client  ?? "—",
+      quantity:     updated.quantity,
+      unit_price:   parseFloat(updated.unit_price ?? 0),
+      currency:     updated.currency,
+      date:         updated.date,
+      product:      updated.product,
+      client:       updated.client,
+    } : row));
+  };
+
+  const handleDelete = async (id) => {
+    await del(`/purchases/${id}/`);
+    setPurchases((prev) => prev.filter((row) => row.id !== id));
+  };
+
+  // ── Checkbox state ─────────────────────────────────────────────────────────
+
+  const allChecked    = productsDisplay.every((v) => v.checked);
+  const indeterminate = productsDisplay.some((v) => v.checked) && !allChecked;
+
+  if (loading) {
+    return <Center h={400}><Loader size="lg" /></Center>;
+  }
+
   return (
     <Stack gap="lg">
       <Box>
@@ -108,103 +287,113 @@ const Sales = () => {
         <Text c="dimmed" size="sm">Everything about your sales and products</Text>
       </Box>
 
+      {/* ── Summary cards + Pie ── */}
       <Grid>
-        {stats.map((stat, index) => (
-          <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <SummaryCard title={stat.title} icon={stat.icon} diff={stat.diff} value={stat.value} desc={stat.desc} />
+        {stats.map((stat, i) => (
+          <Grid.Col key={i} span={{ base: 12, sm: 4 }}>
+            <SummaryCard title={stat.title} icon={stat.icon} value={stat.value} desc={stat.desc} />
           </Grid.Col>
         ))}
         <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Paper withBorder p="md" radius="md">
-            <Group justify="space-between">
-            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Product Category Sales Percentage</Text>
-            <Text c="clientFlow.4"><IconPercentage size={24} /></Text>
-            </Group>
-            <Group align="flex-end" gap="xs" mt={10}>
-              <ResponsiveContainer width="100%" aspect={1.618}>
-                <PieChart>
-                  <Pie data={productSalesPercentageData} shape={MyCustomPie} dataKey="value" labelLine={false} label={renderCustomizedLabel} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Group>
-            <Text size="sm" c="dimmed" mt="xs">Hottest category: {hotProductCategory}</Text>
+          <Paper withBorder p="md" radius="md" h="100%">
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb="xs">Revenue per Product</Text>
+            <ResponsiveContainer width="100%" aspect={1.4}>
+              <PieChart>
+                <Pie data={pieData} dataKey="value" labelLine={false} label={renderCustomizedLabel}>
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(v, name) => [`$${Number(v).toLocaleString()}`, name]}
+                  contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </Paper>
         </Grid.Col>
       </Grid>
 
+      {/* ── Line chart ── */}
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="xl">Sales per Product</Text>
+        <Text fw={700} mb="xl">Revenue per Product — {CURRENT_YEAR}</Text>
         <Flex wrap="wrap" gap="md">
-          <Box h={300} w={{md: "80%", sm: "100%", xs: "100%"}}>
-            <ResponsiveContainer>
-              <LineChart data={productSalesData}>
-                <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#88c9c5" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#88c9c5" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+          <Box h={300} style={{ flex: "1 1 70%" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                {
-                  productsDisplayData.map((product, index) => {
-                    if (product.checked) {return (
-                    <Line key={index} type="monotone" dataKey={product.name} stroke={colors[index % colors.length]} strokeWidth={3} />)}
-                  })
-                }
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                <Tooltip
+                  formatter={(v, name) => [`$${Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 })}`, name]}
+                  contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                />
+                {productsDisplay.map((product, i) =>
+                  product.checked ? (
+                    <Line
+                      key={product.name}
+                      type="monotone"
+                      dataKey={product.name}
+                      stroke={COLORS[i % COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls
+                    />
+                  ) : null
+                )}
                 <Legend />
               </LineChart>
             </ResponsiveContainer>
           </Box>
-          <ScrollArea h="300" w={{md: "15%", sm: "100%"}}>
-            <Stack>
+
+          <ScrollArea h={300} style={{ flex: "1 1 20%" }}>
+            <Stack gap="xs">
               <Checkbox
-                checked={displayAllChecked}
-                indeterminate={displayIndeterminate}
-                label="Show all products"
+                checked={allChecked}
+                indeterminate={indeterminate}
+                label="Show all"
                 onChange={() =>
-                  productsDisplayDataHandlers.setState((current) =>
-                    current.map((value) => ({ ...value, checked: !displayAllChecked }))
-                  )
+                  productsDisplayHandlers.setState((cur) => cur.map((v) => ({ ...v, checked: !allChecked })))
                 }
               />
-              {productsDisplayData.map((product, index) => (
+              {productsDisplay.map((product, i) => (
                 <Checkbox
-                  mt="xs"
-                  ml={33}
+                  key={product.name}
+                  ml={24}
                   label={product.label}
-                  key={product.key}
                   checked={product.checked}
-                  onChange={(event) => productsDisplayDataHandlers.setItemProp(index, 'checked', event.currentTarget.checked)}
+                  onChange={(e) => productsDisplayHandlers.setItemProp(i, "checked", e.currentTarget.checked)}
                 />
               ))}
-          </Stack>
+            </Stack>
           </ScrollArea>
         </Flex>
-        
       </Paper>
 
-      <TableSort 
-      structure={tableStructure} 
-      data={tableData} 
-      canEditRows 
-      canAddRows 
-      canDeleteRows 
-      newRowForm = {newRowForm}
-      editRowForm = {editRowForm} 
-      editRowFields={editRowFields}
-      newRowFields={newRowFields}
-      addRowsTitle="Add new product" 
-      editRowTitle="Edit product" 
-      deleteRowTitle="product" 
-      addRowBtnInfo="Add new product" 
-      deleteRowInfo="Are you sure you want to delete this product? This action is destructive, this data will be gone forever!"
-      />
+      {/* ── Purchases table ── */}
+      <Paper withBorder p="md" radius="md">
+        <Text fw={700} mb="md">Purchases</Text>
+        <TableSort
+          structure={purchaseTableStructure}
+          data={purchases}
+          onAdd={handleAdd}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          newRowForm={newRowForm}
+          editRowForm={editRowForm}
+          newRowFields={newRowFields}
+          editRowFields={editRowFields}
+          canAddRows canEditRows canDeleteRows
+          addRowsTitle="Add new purchase"
+          editRowTitle="Edit purchase"
+          deleteRowTitle="Delete purchase"
+          addRowBtnInfo="Add purchase"
+          deleteRowInfo="Are you sure you want to delete this purchase? This action cannot be undone."
+        />
+      </Paper>
     </Stack>
-  )
-}
+  );
+};
 
-export default Sales
+export default Sales;
