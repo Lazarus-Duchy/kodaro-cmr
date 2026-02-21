@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
 
     # apps
     'api',
@@ -60,6 +61,9 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -81,7 +85,7 @@ REST_FRAMEWORK = {
 
 # ── JWT settings ─────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=24),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,       # issue a new refresh token on every refresh
     "BLACKLIST_AFTER_ROTATION": True,    # blacklist the old one immediately
@@ -93,6 +97,12 @@ SIMPLE_JWT = {
 # Tell Django to use your custom user model
 AUTH_USER_MODEL = "Users.User"
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Vite's default port
+]
+
+# Also allow cookies/auth headers to be sent cross-origin
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'kodaro.urls'
 
