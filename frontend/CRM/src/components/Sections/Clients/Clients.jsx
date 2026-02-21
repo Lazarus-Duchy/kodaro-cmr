@@ -2,19 +2,21 @@ import {
   IconDeviceDesktop,
   IconUser,
 } from '@tabler/icons-react';
-import { Box, Grid, Paper, Stack, Title, Text } from "@mantine/core";
+import { Box, Grid, Paper, Stack, Title, Text, NumberInput, TextInput } from "@mantine/core";
 import { useEffect, useState } from "react";
+import { useForm } from '@mantine/form';
 import { TableSort } from "../../Features/TableSort/TableSort";
 import SummaryCard from '../../Features/SummaryCard/SummaryCard';
-import { get, post, patch, del } from '../../../api';
+//import { get, post, patch, del } from '../../../api';
+import { DateTimePicker } from '@mantine/dates';
 
 const tableStructure = [
-  { name: 'id',         label: 'ID',         type: 'number', isEditable: false, required: false},
-  { name: 'name',       label: 'Name',        type: 'string', isEditable: true,  required: true },
-  { name: 'email',      label: 'Email',       type: 'string', isEditable: true,  required: false },
-  { name: 'phone',      label: 'Phone',       type: 'string', isEditable: true,  required: false },
-  { name: 'city',       label: 'City',        type: 'string', isEditable: true,  required: false },
-  { name: 'created_at', label: 'Created At',  type: 'date',   isEditable: false, required: false },
+  { name: 'id',         label: 'ID',          },
+  { name: 'name',       label: 'Name',        },
+  { name: 'email',      label: 'Email',       },
+  { name: 'phone',      label: 'Phone',       },
+  { name: 'city',       label: 'City',        },
+  { name: 'created_at', label: 'Created At',  },
 ];
 
 const tableValidation = {
@@ -28,8 +30,30 @@ const Clients = () => {
     { title: 'Active Clients', value: '—', desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
   ]);
 
-  // ── Fetch clients on mount ───────────────────────────────────────────────────
+  const newRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
+  const editRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
 
+  const newRowFields = [
+    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly required {...newRowForm.getInputProps('id')} />,
+    <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
+    <TextInput key={newRowForm.key("email")} label={'Email'} withAsterisk required {...newRowForm.getInputProps('email')} />,
+    <TextInput key={newRowForm.key("phone")} label={'Phone'} withAsterisk required {...newRowForm.getInputProps('phone')} />,
+    <TextInput key={newRowForm.key("city")} label={'City'} withAsterisk required {...newRowForm.getInputProps('city')} />,
+    <DateTimePicker key={newRowForm.key("created_at")} label={'Created At'} readOnly required {...newRowForm.getInputProps('created_at')}  />,
+  ]
+
+  const editRowFields = [
+    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly required {...editRowForm.getInputProps('id')} />,
+    <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
+    <TextInput key={editRowForm.key("email")} label={'Email'} withAsterisk required {...editRowForm.getInputProps('email')} />,
+    <TextInput key={editRowForm.key("phone")} label={'Phone'} withAsterisk required {...editRowForm.getInputProps('phone')} />,
+    <TextInput key={editRowForm.key("city")} label={'City'} withAsterisk required {...editRowForm.getInputProps('city')} />,
+    <DateTimePicker key={editRowForm.key("created_at")} label={'Created At'} readOnly required {...editRowForm.getInputProps('created_at')}  />,
+  ]
+
+  /*
+  // ── Fetch clients on mount ───────────────────────────────────────────────────
+  
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -48,24 +72,30 @@ const Clients = () => {
     };
     fetchClients();
   }, []);
+  */
 
   // ── CRUD handlers passed to TableSort ───────────────────────────────────────
 
   const handleAdd = async (values) => {
+    /*
     const newClient = await post("/clients/", values);
     setTableData((prev) => [newClient, ...prev]);
     setStats((prev) => [
       { ...prev[0], value: String(Number(prev[0].value) + 1) },
       prev[1],
     ]);
+    */
   };
 
   const handleEdit = async (id, values) => {
+    /*
     const updated = await patch(`/clients/${id}/`, values);
     setTableData((prev) => prev.map((row) => (row.id === id ? updated : row)));
+    */
   };
 
   const handleDelete = async (id) => {
+    /*
     await del(`/clients/${id}/`);
     setTableData((prev) => {
       const next = prev.filter((row) => row.id !== id);
@@ -76,7 +106,9 @@ const Clients = () => {
       ]);
       return next;
     });
+    */
   };
+  
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -112,7 +144,10 @@ const Clients = () => {
           canEditRows
           canAddRows
           canDeleteRows
-          validation={tableValidation}
+          newRowForm={newRowForm}
+          editRowForm={editRowForm}
+          newRowFields={newRowFields}
+          editRowFields={editRowFields}
           addRowsTitle="Add new client"
           editRowTitle="Edit client"
           deleteRowTitle="Delete client"
@@ -124,4 +159,9 @@ const Clients = () => {
   );
 };
 
-export default Clients;
+export default Clients
+
+
+
+
+

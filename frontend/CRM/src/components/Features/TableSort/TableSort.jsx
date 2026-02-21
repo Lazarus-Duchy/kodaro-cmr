@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconEdit, IconSearch, IconSelector, IconTrash } from '@tabler/icons-react';
 import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, NumberInput, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
+import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useForm } from '@mantine/form';
 
+const Th = ({ children, reversed, sorted, onSort }) => {
 const Th = ({ children, reversed, sorted, onSort }) => {
   const Icon = sorted ? (reversed ? IconChevronUp : IconChevronDown) : IconSelector;
   return (
     <Table.Th>
       <UnstyledButton onClick={onSort}>
         <Group justify="space-between">
+          <Text fw={500} fz="sm">{children}</Text>
           <Text fw={500} fz="sm">{children}</Text>
           <Center>
             <Icon size={16} stroke={1.5} />
@@ -20,11 +22,14 @@ const Th = ({ children, reversed, sorted, onSort }) => {
     </Table.Th>
   );
 };
+};
 
 function filterData(data, search) {
   const query = search.toLowerCase().trim();
   if (!data.length) return [];
+  if (!data.length) return [];
   return data.filter((item) =>
+    keys(item).some((key) => item[key]?.toString().toLowerCase().includes(query))
     keys(item).some((key) => item[key]?.toString().toLowerCase().includes(query))
   );
 }
@@ -32,8 +37,10 @@ function filterData(data, search) {
 function sortData(data, payload) {
   const { sortBy } = payload;
   if (!sortBy) return filterData(data, payload.search);
+  if (!sortBy) return filterData(data, payload.search);
   return filterData(
     [...data].sort((a, b) => {
+      if (payload.reversed) return b[sortBy].toString().localeCompare(a[sortBy]);
       if (payload.reversed) return b[sortBy].toString().localeCompare(a[sortBy]);
       return a[sortBy].toString().localeCompare(b[sortBy]);
     }),
@@ -48,6 +55,13 @@ export function TableSort({
   onEdit,
   onDelete,
   addRowsTitle = "Add new row",
+export function TableSort({
+  structure,
+  data,
+  onAdd,
+  onEdit,
+  onDelete,
+  addRowsTitle = "Add new row",
   addRowBtnInfo = "Add new row",
   editRowTitle = "Edit row",
   deleteRowTitle = "Delete row",
@@ -55,7 +69,10 @@ export function TableSort({
   canAddRows = false,
   canEditRows = false,
   canDeleteRows = false,
-  validation = {},
+  newRowForm,
+  editRowForm,
+  editRowFields,
+  newRowFields,
 }) {
   const [search, setSearch] = useState('');
   const [sortedData, setSortedData] = useState(data);
@@ -71,9 +88,6 @@ export function TableSort({
   const [newRowOpened, { open: newRowOpen, close: newRowClose }] = useDisclosure(false);
   const [editRowOpened, { open: editRowOpen, close: editRowClose }] = useDisclosure(false);
   const [deleteRowOpened, { open: deleteRowOpen, close: deleteRowClose }] = useDisclosure(false);
-
-  const newRowForm = useForm({ mode: 'uncontrolled', validate: validation });
-  const editRowForm = useForm({ mode: 'uncontrolled', validate: validation });
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -159,21 +173,31 @@ export function TableSort({
     setSortedData(data);
   }, [data]);
 
-  // ── Render helpers ───────────────────────────────────────────────────────────
-
-  const renderFields = (form) =>
-    structure.map((column) => {
-      switch (column.type) {
-        case "number":
-          return <NumberInput key={form.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...form.getInputProps(column.name)} />;
-        case "string":
-          return <TextInput key={form.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...form.getInputProps(column.name)} />;
-        case "date":
-          return <DateTimePicker key={form.key(column.name)} label={column.label} readOnly={!column.isEditable} withAsterisk={column.required} required={column.required} {...form.getInputProps(column.name)} />;
-        default:
-          return null;
-      }
+  useEffect(() => {
+    let tempData = {};
+    structure.forEach((column) => {
+      tempData[column.name] = column.default;
     });
+    newRowForm.setValues(tempData);
+    newRowForm.setInitialValues(tempData);
+  }, []);
+
+  useEffect(() => {
+    setSortedData(data);
+  }, [data]);
+
+  useEffect(() => {
+    let tempData = {};
+    structure.forEach((column) => {
+      tempData[column.name] = column.default;
+    });
+    newRowForm.setValues(tempData);
+    newRowForm.setInitialValues(tempData);
+  }, []);
+
+  useEffect(() => {
+    setSortedData(data);
+  }, [data]);
 
   const head = structure.map((column, index) => (
     <Th key={index} sorted={sortBy === column.name} reversed={reverseSortDirection} onSort={() => setSorting(column.name)}>
@@ -212,7 +236,7 @@ export function TableSort({
         <LoadingOverlay visible={newRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={newRowForm.onSubmit(handleAddRow)}>
           <Stack>
-            {renderFields(newRowForm)}
+            {newRowFields}
             {error && <Text c="red" size="sm">{error}</Text>}
             <Group justify="flex-end">
               <Button variant="outline" color="red" onClick={newRowClose}>Cancel</Button>
@@ -227,7 +251,7 @@ export function TableSort({
         <LoadingOverlay visible={editRowLoading} zIndex={1000} overlayProps={{ radius: "sm", blur: 2 }} />
         <form onSubmit={editRowForm.onSubmit(handleEditRow)}>
           <Stack>
-            {renderFields(editRowForm)}
+            {editRowFields}
             {error && <Text c="red" size="sm">{error}</Text>}
             <Group justify="flex-end">
               <Button variant="outline" color="red" onClick={editRowClose}>Dismiss changes</Button>
