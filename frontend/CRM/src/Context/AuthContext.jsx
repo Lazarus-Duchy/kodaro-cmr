@@ -1,61 +1,63 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { auth as apiAuth, tokens, get } from '../api.js';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]           = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading]     = useState(true); // true while verifying session on mount
 
-  // Restore session from localStorage on mount
+  // ── Restore session on mount ───────────────────────────────────────────────
   useEffect(() => {
-    const savedUser = localStorage.getItem('clientflow_user');
-    if (savedUser) {
+    const restoreSession = async () => {
+      const accessToken = tokens.getAccess();
+      if (!accessToken) {
+        setLoading(false);
+        return;
+      }
       try {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed);
+        // Verify token is still valid by fetching current user
+        const userData = await get('/users/me/');
+        setUser(userData);
         setIsLoggedIn(true);
       } catch {
-        localStorage.removeItem('clientflow_user');
+        // Token expired or invalid — try refresh happens automatically in api.js interceptor.
+        // If it also fails, the interceptor clears tokens; we just reset state here.
+        tokens.clear();
+        setUser(null);
+        setIsLoggedIn(false);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    restoreSession();
   }, []);
 
-  const login = (userData) => {
-    setUser(userData);
+  // ── Login ──────────────────────────────────────────────────────────────────
+  const login = async (credentials) => {
+    const data = await apiAuth.login(credentials); // stores tokens automatically
+    setUser(data.user);
     setIsLoggedIn(true);
-    localStorage.setItem('clientflow_user', JSON.stringify(userData));
+    return data;
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsLoggedIn(false);
-    localStorage.removeItem('clientflow_user');
-  };
-
-  const register = (userData) => {
-    // In a real app this would hit an API
-    // For now, just save to localStorage as "registered users"
-    const users = JSON.parse(localStorage.getItem('clientflow_users') || '[]');
-    const exists = users.find(u => u.email === userData.email);
-    if (exists) {
-      throw new Error('Użytkownik z tym adresem email już istnieje.');
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  const logout = async () => {
+    try {
+      await apiAuth.logout(); // blacklists refresh token, clears localStorage
+    } catch {
+      // Even if the server call fails, clear local state
+      tokens.clear();
+    } finally {
+      setUser(null);
+      setIsLoggedIn(false);
     }
-    users.push(userData);
-    localStorage.setItem('clientflow_users', JSON.stringify(users));
-    login(userData);
-  };
-
-  const validateLogin = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('clientflow_users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
-    if (!user) {
-      throw new Error('Nieprawidłowy email lub hasło.');
-    }
-    login(user);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, register, validateLogin }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
