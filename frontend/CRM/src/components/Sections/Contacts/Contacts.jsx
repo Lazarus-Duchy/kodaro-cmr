@@ -1,137 +1,192 @@
 import {
   IconAddressBook,
-  IconCoin,
   IconDeviceDesktop,
-  IconDiscount2,
-  IconMoodHappy,
-  IconReceipt2,
-  IconUserPlus,
   IconUsers,
 } from '@tabler/icons-react';
-import { Box, Grid, Paper, Stack, Title, Text, NumberInput, TextInput, Select } from "@mantine/core"
+import { Box, Grid, Paper, Stack, Title, Text, TextInput, Select } from "@mantine/core";
 import { TableSort } from "../../Features/TableSort/TableSort";
 import SummaryCard from '../../Features/SummaryCard/SummaryCard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@mantine/form';
-import { DateTimePicker } from '@mantine/dates';
+import { get, post, patch, del } from '../../../api';
 
+// ── Table structure — maps backend fields to column labels ───────────────────
 
 const tableStructure = [
-  { name: 'id',         label: 'ID',          },
-  { name: 'name',       label: 'Name',        },
-  { name: 'lastname',   label: 'LastName',    },
-  { name: 'job_title',  label: 'Job Title',   },
+  { name: 'id',         label: 'ID',         default: '' },
+  { name: 'first_name', label: 'Name',       default: '' },
+  { name: 'last_name',  label: 'Surname',    default: '' },
+  { name: 'stanowisko', label: 'Position',   default: '' },
 ];
 
-const tableValidation = {};
+const DZIAL_OPTIONS = [
+  { value: 'it',        label: 'IT' },
+  { value: 'hr',        label: 'HR' },
+  { value: 'finanse',   label: 'Finanse' },
+  { value: 'sprzedaz',  label: 'Sprzedaż' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'operacje',  label: 'Operacje' },
+  { value: 'zarzad',    label: 'Zarząd' },
+  { value: 'logistyka', label: 'Logistyka' },
+  { value: 'inny',      label: 'Inny' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'aktywny',     label: 'Aktywny' },
+  { value: 'nieaktywny',  label: 'Nieaktywny' },
+  { value: 'urlop',       label: 'Na urlopie' },
+  { value: 'zwolniony',   label: 'Zwolniony' },
+  { value: 'staz',        label: 'Staż' },
+];
+
+const tableValidation = {
+  first_name: (v) => (!v ? 'Name is required' : null),
+  last_name:  (v) => (!v ? 'Surname is required' : null),
+  email:      (v) => (!v ? 'Email is required' : null),
+};
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 const Contacts = () => {
-  const [tableData, setTableData] = useState([]);
-  const [jobTitlesData, setJobTitlesData] = useState(['title1', 'title2']);
-  const [stats, setStats] = useState([
-    { title: 'Total Contacts',  value: '—', icon: <IconAddressBook size={24} /> },
-    { title: 'Active Leads', value: '—', desc: "Right now", icon: <IconUsers size={24} /> },
-    { title: 'Online Now', value: '—', desc: "Active contacts", icon: <IconDeviceDesktop size={24} /> }
+  const [tableData, setTableData]   = useState([]);
+  const [stats, setStats]           = useState([
+    { title: 'Total Workers',   value: '—', icon: <IconAddressBook size={24} /> },
+    { title: 'Active Workers',  value: '—', desc: 'Status: aktywny', icon: <IconUsers size={24} /> },
+    { title: 'On Leave',        value: '—', desc: 'Status: urlop',   icon: <IconDeviceDesktop size={24} /> },
   ]);
 
-  const newRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
-  const editRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
+  const newRowForm  = useForm({ mode: 'uncontrolled', initialValues: {}, validate: tableValidation });
+  const editRowForm = useForm({ mode: 'uncontrolled', initialValues: {}, validate: tableValidation });
 
-  const newRowFields = [
-    <NumberInput key={newRowForm.key("id")} label={'Id'} readOnly required {...newRowForm.getInputProps('id')} />,
-    <TextInput key={newRowForm.key("name")} label={'Name'} withAsterisk required {...newRowForm.getInputProps('name')} />,
-    <TextInput key={newRowForm.key("lastname")} label={'Last Name'} withAsterisk required {...newRowForm.getInputProps('lastname')} />,
-    <Select key={newRowForm.key("job_title")} data={jobTitlesData} label={'Job Title'} withAsterisk required {...newRowForm.getInputProps('job_title')}/>
-  ]
+  // ── Shared field definitions ───────────────────────────────────────────────
 
-  const editRowFields = [
-    <NumberInput key={editRowForm.key("id")} label={'Id'} readOnly required {...editRowForm.getInputProps('id')} />,
-    <TextInput key={editRowForm.key("name")} label={'Name'} withAsterisk required {...editRowForm.getInputProps('name')} />,
-    <TextInput key={editRowForm.key("lastname")} label={'Last Name'} withAsterisk required {...editRowForm.getInputProps('lastname')} />,
-    <Select key={editRowForm.key("job_title")} data={jobTitlesData} label={'Job Title'} withAsterisk required {...editRowForm.getInputProps('job_title')}/>
-  ]
+  const buildFields = (form) => [
+    <TextInput
+      key={form.key('first_name')}
+      label="Name"
+      withAsterisk
+      {...form.getInputProps('first_name')}
+    />,
+    <TextInput
+      key={form.key('last_name')}
+      label="Surname"
+      withAsterisk
+      {...form.getInputProps('last_name')}
+    />,
+    <TextInput
+      key={form.key('email')}
+      label="Email"
+      withAsterisk
+      {...form.getInputProps('email')}
+    />,
+    <TextInput
+      key={form.key('stanowisko')}
+      label="Position"
+      {...form.getInputProps('stanowisko')}
+    />,
+    <TextInput
+      key={form.key('phone')}
+      label="Phone"
+      {...form.getInputProps('phone')}
+    />,
+    <Select
+      key={form.key('status')}
+      label="Status"
+      data={STATUS_OPTIONS}
+      {...form.getInputProps('status')}
+    />,
+    <Select
+      key={form.key('dzial')}
+      label="Department"
+      data={DZIAL_OPTIONS}
+      {...form.getInputProps('dzial')}
+    />,
+  ];
 
-  /*
-  // ── Fetch clients on mount ───────────────────────────────────────────────────
-  
+  const newRowFields  = buildFields(newRowForm);
+  const editRowFields = buildFields(editRowForm);
+
+  // ── Helper — update summary cards ─────────────────────────────────────────
+
+  const updateStats = (data) => {
+    const active  = data.filter((w) => w.status === 'aktywny').length;
+    const onLeave = data.filter((w) => w.status === 'urlop').length;
+    setStats([
+      { title: 'Total Workers',  value: String(data.length), icon: <IconAddressBook size={24} /> },
+      { title: 'Active Workers', value: String(active),       desc: 'Status: aktywny', icon: <IconUsers size={24} /> },
+      { title: 'On Leave',       value: String(onLeave),      desc: 'Status: urlop',   icon: <IconDeviceDesktop size={24} /> },
+    ]);
+  };
+
+  // ── Fetch workers on mount ─────────────────────────────────────────────────
+
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchPracownicy = async () => {
       try {
-        const data = await get("/clients/");
+        const data = await get('/pracownicy/');
         setTableData(data);
-
-        // Update summary cards from real data
-        const activeCount = data.filter((c) => c.status === "active").length;
-        setStats([
-          { title: 'Total Clients',  value: String(data.length),  icon: <IconUser size={24} /> },
-          { title: 'Active Clients', value: String(activeCount), desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
-        ]);
+        updateStats(data);
       } catch (error) {
-        console.error("Failed to fetch clients:", error);
+        console.error('Failed to fetch pracownicy:', error);
       }
     };
-    fetchClients();
+    fetchPracownicy();
   }, []);
-  */
 
-  // ── CRUD handlers passed to TableSort ───────────────────────────────────────
+  // ── CRUD handlers ──────────────────────────────────────────────────────────
 
   const handleAdd = async (values) => {
-    /*
-    const newClient = await post("/clients/", values);
-    setTableData((prev) => [newClient, ...prev]);
-    setStats((prev) => [
-      { ...prev[0], value: String(Number(prev[0].value) + 1) },
-      prev[1],
-    ]);
-    */
+    const newWorker = await post('/pracownicy/', values);
+    setTableData((prev) => {
+      const next = [newWorker, ...prev];
+      updateStats(next);
+      return next;
+    });
   };
 
   const handleEdit = async (id, values) => {
-    /*
-    const updated = await patch(`/clients/${id}/`, values);
-    setTableData((prev) => prev.map((row) => (row.id === id ? updated : row)));
-    */
+    const updated = await patch(`/pracownicy/${id}/`, values);
+    setTableData((prev) => {
+      const next = prev.map((row) => (row.id === id ? updated : row));
+      updateStats(next);
+      return next;
+    });
   };
 
   const handleDelete = async (id) => {
-    /*
-    await del(`/clients/${id}/`);
+    await del(`/pracownicy/${id}/`);
     setTableData((prev) => {
       const next = prev.filter((row) => row.id !== id);
-      const activeCount = next.filter((c) => c.status === "active").length;
-      setStats([
-        { title: 'Total Clients',  value: String(next.length),  icon: <IconUser size={24} /> },
-        { title: 'Active Clients', value: String(activeCount), desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
-      ]);
+      updateStats(next);
       return next;
     });
-    */
   };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Stack gap="lg">
       <Box>
-        <Title order={1}>Contacts</Title>
-        <Text c="dimmed" size="sm">Manage your contact database and communication info</Text>
+        <Title order={1}>Workers</Title>
+        <Text c="dimmed" size="sm">Manage your employee database</Text>
       </Box>
 
       <Grid>
         {stats.map((stat, index) => (
           <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <SummaryCard 
-              title={stat.title} 
-              icon={stat.icon} 
-              diff={stat.diff} 
-              value={stat.value} 
-              desc={stat.desc} 
+            <SummaryCard
+              title={stat.title}
+              icon={stat.icon}
+              diff={stat.diff}
+              value={stat.value}
+              desc={stat.desc}
             />
           </Grid.Col>
         ))}
       </Grid>
 
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="md">Contact List</Text>
+        <Text fw={700} mb="md">Worker List</Text>
         <TableSort
           structure={tableStructure}
           data={tableData}
@@ -145,17 +200,15 @@ const Contacts = () => {
           editRowForm={editRowForm}
           newRowFields={newRowFields}
           editRowFields={editRowFields}
-          addRowsTitle="Add new contact"
-          editRowTitle="Edit contact"
-          deleteRowTitle="Delete contact"
-          addRowBtnInfo="Add new contact"
-          deleteRowInfo="Are you sure you want to delete this contact? This action is destructive, this data will be gone forever!"
+          addRowsTitle="Add new worker"
+          editRowTitle="Edit worker"
+          deleteRowTitle="Delete worker"
+          addRowBtnInfo="Add worker"
+          deleteRowInfo="Are you sure you want to delete this worker? This action is destructive and cannot be undone."
         />
       </Paper>
     </Stack>
-  )
-}
+  );
+};
 
 export default Contacts;
-
-
