@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react';
 import { IconChevronDown, IconChevronUp, IconEdit, IconSearch, IconSelector, IconTrash } from '@tabler/icons-react';
-import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, NumberInput, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
-import { DateTimePicker } from '@mantine/dates';
 import { Button, Center, Flex, Group, keys, LoadingOverlay, Modal, ScrollArea, Stack, Table, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
-const Th = ({ children, reversed, sorted, onSort }) => {
 const Th = ({ children, reversed, sorted, onSort }) => {
   const Icon = sorted ? (reversed ? IconChevronUp : IconChevronDown) : IconSelector;
   return (
     <Table.Th>
       <UnstyledButton onClick={onSort}>
         <Group justify="space-between">
-          <Text fw={500} fz="sm">{children}</Text>
           <Text fw={500} fz="sm">{children}</Text>
           <Center>
             <Icon size={16} stroke={1.5} />
@@ -22,14 +18,11 @@ const Th = ({ children, reversed, sorted, onSort }) => {
     </Table.Th>
   );
 };
-};
 
 function filterData(data, search) {
   const query = search.toLowerCase().trim();
   if (!data.length) return [];
-  if (!data.length) return [];
   return data.filter((item) =>
-    keys(item).some((key) => item[key]?.toString().toLowerCase().includes(query))
     keys(item).some((key) => item[key]?.toString().toLowerCase().includes(query))
   );
 }
@@ -37,10 +30,8 @@ function filterData(data, search) {
 function sortData(data, payload) {
   const { sortBy } = payload;
   if (!sortBy) return filterData(data, payload.search);
-  if (!sortBy) return filterData(data, payload.search);
   return filterData(
     [...data].sort((a, b) => {
-      if (payload.reversed) return b[sortBy].toString().localeCompare(a[sortBy]);
       if (payload.reversed) return b[sortBy].toString().localeCompare(a[sortBy]);
       return a[sortBy].toString().localeCompare(b[sortBy]);
     }),
@@ -48,13 +39,6 @@ function sortData(data, payload) {
   );
 }
 
-export function TableSort({
-  structure,
-  data,
-  onAdd,
-  onEdit,
-  onDelete,
-  addRowsTitle = "Add new row",
 export function TableSort({
   structure,
   data,
@@ -159,32 +143,6 @@ export function TableSort({
     setSearch(value);
     setSortedData(sortData(data, { sortBy, reversed: reverseSortDirection, search: value }));
   };
-
-  useEffect(() => {
-    let tempData = {};
-    structure.forEach((column) => {
-      tempData[column.name] = column.default;
-    });
-    newRowForm.setValues(tempData);
-    newRowForm.setInitialValues(tempData);
-  }, []);
-
-  useEffect(() => {
-    setSortedData(data);
-  }, [data]);
-
-  useEffect(() => {
-    let tempData = {};
-    structure.forEach((column) => {
-      tempData[column.name] = column.default;
-    });
-    newRowForm.setValues(tempData);
-    newRowForm.setInitialValues(tempData);
-  }, []);
-
-  useEffect(() => {
-    setSortedData(data);
-  }, [data]);
 
   useEffect(() => {
     let tempData = {};
