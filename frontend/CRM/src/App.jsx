@@ -9,10 +9,11 @@ import Navbar from './components/Layout/Navbar/Navbar.jsx';
 import Footer from './components/Layout/Footer/footer.jsx';
 import LoadingScreen from './components/Modals/LoadingScreen/loadingScreen.jsx';
 import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrumbs.jsx';
+import { useAuth } from './Context/AuthContext.jsx';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn } = useAuth();
   const location = useLocation();
   const [navbarOpened, { toggle }] = useDisclosure();
   const [section, setSection] = useState({ href: '/', label: "Home" });
@@ -47,32 +48,36 @@ const App = () => {
       padding="md"
       header={{ height: 60 }}
       footer={{ height: 60 }}
-      navbar={{
-        width: 300,
-        breakpoint: 'sm',
-        collapsed: { mobile: !navbarOpened },
-      }}
+      navbar={
+        isLoggedIn
+          ? {
+              width: 300,
+              breakpoint: 'sm',
+              collapsed: { mobile: !navbarOpened },
+            }
+          : { width: 0, breakpoint: 'sm', collapsed: { desktop: true, mobile: true } }
+      }
     >
-      <Header 
-        opened={navbarOpened} 
-        toggle={toggle} 
-        isLoggedIn={isLoggedIn} 
-        setIsLoggedIn={setIsLoggedIn} 
-      />
-      
-      <Navbar 
-        pathSteps={pathSteps} 
-        isLoggedIn={isLoggedIn} 
+      <Header
+        opened={navbarOpened}
+        toggle={toggle}
       />
 
+      {/* Navbar only rendered for logged-in users */}
+      {isLoggedIn && (
+        <Navbar pathSteps={pathSteps} />
+      )}
+
       <AppShell.Main>
-        {section.href !== '/' && <PathBreadcrumbs pathSteps={pathSteps} />}
-        <RouterSwitcher isLoggedIn={isLoggedIn} />
+        {isLoggedIn && section.href !== '/' && (
+          <PathBreadcrumbs pathSteps={pathSteps} />
+        )}
+        <RouterSwitcher />
       </AppShell.Main>
-      
+
       <Footer />
     </AppShell>
   );
-}
+};
 
 export default App;

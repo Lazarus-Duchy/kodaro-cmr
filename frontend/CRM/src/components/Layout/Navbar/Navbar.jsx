@@ -119,30 +119,9 @@ const Navbar = ({ pathSteps }) => {
           </ActionIcon>
         </Group>
 
-        <NavLink
-          label="Settings"
-          leftSection={<IconSettings size={20} stroke={1.5} />}
-          styles={{ root: { borderRadius: '8px' } }}
-        />
+       
 
-        <Box mt="md" p="xs" style={{ 
-          background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8f9fa', 
-          borderRadius: '12px',
-          border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid transparent'
-        }}>
-          <Group justify="space-between" wrap="nowrap">
-            <Group gap="sm">
-              <Avatar src={null} radius="xl" color="clientFlow.4">JD</Avatar>
-              <div style={{ flex: 1 }}>
-                <Text size="sm" fw={500}>John Doe</Text>
-                <Text size="xs" c="dimmed">Admin</Text>
-              </div>
-            </Group>
-            <ActionIcon variant="subtle" color="red" title="Logout">
-              <IconLogout size={18} />
-            </ActionIcon>
-          </Group>
-        </Box>
+  
       </AppShell.Section>
     </AppShell.Navbar>
   );
