@@ -1,8 +1,9 @@
 import { Container, Title, Text, Button, Group, Stack, Grid, Paper, ThemeIcon, rem, Image } from '@mantine/core';
 import { IconRocket, IconChartBar, IconShieldCheck } from '@tabler/icons-react';
 import logo from '../../../assets/ClientFlow.png';
-
+import { useNavigate } from "react-router-dom";
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <Container size="lg" py="xl">
       <Stack gap="xl">
@@ -37,11 +38,8 @@ const Home = () => {
           </Text>
 
           <Group mt="xl">
-            <Button size="lg" color="clientFlow.4" variant="strong" radius="xl">
+            <Button size="lg" color="clientFlow.4" variant="strong" radius="xl" onClick={() => {navigate("/reports")}}>
               Get Started
-            </Button>
-            <Button size="lg" variant="subtle" color="clientFlow.4" radius="xl">
-              Learn More
             </Button>
           </Group>
         </Stack>

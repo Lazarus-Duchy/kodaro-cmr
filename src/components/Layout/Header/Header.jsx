@@ -58,9 +58,6 @@ const Header = ({ opened, toggle }) => {
                     <Menu.Item leftSection={<IconUser style={{ width: rem(14) }} />}>
                       Profil
                     </Menu.Item>
-                    <Menu.Item leftSection={<IconSettings style={{ width: rem(14) }} />}>
-                      Ustawienia
-                    </Menu.Item>
                     <Menu.Divider />
                     <Menu.Item
                       color="red"
