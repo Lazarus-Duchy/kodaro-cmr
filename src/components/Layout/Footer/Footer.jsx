@@ -6,7 +6,7 @@ const Footer = () => {
     <AppShell.Footer p="md">
       <Center>
         <Text size="sm" c="dimmed">
-          Built by Księstwo Lazarusa with &lt;3
+          Built by Wojownicy Lazarusa with &lt;3
         </Text>
       </Center>
     </AppShell.Footer>

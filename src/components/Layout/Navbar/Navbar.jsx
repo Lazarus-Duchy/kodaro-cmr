@@ -14,29 +14,15 @@ import {
 
 const navlinks = [
   { 
-    header: 'Main', 
+    header: 'People', 
     links: [
       { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} />,},
       { href: 'clients', label: 'Clients', icon: <IconUsers size={20} stroke={1.5} /> },
     ]
   },
   {
-    header: 'Tools',
+    header: 'Stats',
     links: [
-      { 
-        href: 'marketing', 
-        label: 'Marketing', 
-        icon: <IconSpeakerphone size={20} stroke={1.5} />,
-        children: [
-          { href: 'marketing1', label: 'Campaigns', icon: <IconPoint size={14} /> }, 
-          { 
-            href: 'marketing2', 
-            label: 'Analytics', 
-            icon: <IconPoint size={14} />,
-            children: [{ href: 'marketing1.1', label: 'Social Media', icon: <IconPoint size={14} /> }] 
-          }
-        ] 
-      },
       { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
       { href: 'sales', label: 'Sales', icon: <IconShoppingCart size={20} stroke={1.5} /> },
     ]
@@ -50,6 +36,8 @@ const Navbar = ({ pathSteps }) => {
   const isDark = colorScheme === 'dark';
 
   const mapNavLinks = (list, stack = 0, parentHref = '', isParentActive = true) => {
+    if (stack < 0) stack = 0;
+    
     if (stack > maxStackSize) {
       console.warn(`Stack reached it's limit! (${maxStackSize})`);
       return;
