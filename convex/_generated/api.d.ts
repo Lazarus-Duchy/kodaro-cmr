@@ -8,13 +8,19 @@
  * @module
  */
 
+import type * as campaigns from "../campaigns.js";
+import type * as segments from "../segments.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  campaigns: typeof campaigns;
+  segments: typeof segments;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

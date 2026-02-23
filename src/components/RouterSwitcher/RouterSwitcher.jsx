@@ -6,6 +6,7 @@ import Sales from "../Sections/Sales/Sales";
 import Reports from "../Sections/Reports/Reports";
 import Clients from "../Sections/Clients/Clients";
 import ProtectedRoute from "../Auth/ProtectedRoute";
+import Campaigns from "../Sections/Campaigns/Campaigns";
 
 export const RouterSwitcher = () => {
   return (
@@ -27,6 +28,9 @@ export const RouterSwitcher = () => {
       } />
       <Route path="/sales" element={
         <ProtectedRoute><Sales /></ProtectedRoute>
+      } />
+      <Route path="/campaigns" element={
+        <ProtectedRoute><Campaigns /></ProtectedRoute>
       } />
     </Routes>
   );

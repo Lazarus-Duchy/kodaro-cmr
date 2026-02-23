@@ -1,31 +1,32 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 /**
- * Schema — equivalent to models.py
+ * Convex schema for the CRM Campaign module.
  *
- * `authTables` from @convex-dev/auth provides the built-in
- * users / sessions / accounts / verificationCodes tables.
- * We extend the `users` table with our custom profile fields.
+ * Two tables:
+ *  - segments  : reusable audience definitions (static-ish, seeded once)
+ *  - campaigns : the main campaign records, referencing segment IDs
  */
 export default defineSchema({
-  ...authTables,
+  // ── Audience Segments ──────────────────────────────────────────────────────
+  segments: defineTable({
+    label:         v.string(),   // e.g. "Age 18–34"
+    criteria:      v.string(),   // "age" | "location" | "purchase_history" | "behavior"
+    estimatedSize: v.number(),   // rough contact count for audience preview
+  }),
 
-  users: defineTable({
-    // ----- Identity (managed by @convex-dev/auth) -----
-    email: v.string(),
-    emailVerificationTime: v.optional(v.number()),
-    isAnonymous: v.optional(v.boolean()),
-
-    // ----- Profile fields (mirrors the Django User model) -----
-    firstName: v.optional(v.string()),   // first_name
-    lastName: v.optional(v.string()),    // last_name
-    isActive: v.optional(v.boolean()),   // is_active  (default true)
-    isStaff: v.optional(v.boolean()),    // is_staff   (default false)
-    // date_joined / updated_at are provided automatically by
-    // Convex as _creationTime and a manual updatedAt field below.
-    updatedAt: v.optional(v.number()),   // updated_at (epoch ms, set on write)
-  })
-    .index("email", ["email"]),          // unique lookup by email
+  // ── Campaigns ──────────────────────────────────────────────────────────────
+  campaigns: defineTable({
+    name:        v.string(),
+    type:        v.string(),              // "Email" | "SMS" | "Social"
+    start_date:  v.string(),              // ISO date string  "YYYY-MM-DD"
+    end_date:    v.string(),              // ISO date string  "YYYY-MM-DD"
+    budget:      v.optional(v.number()),  // USD, nullable
+    goal:        v.string(),
+    description: v.optional(v.string()),
+    status:      v.string(),              // "Draft" | "Active" | "Paused" | "Completed"
+    // Convex document IDs of the assigned segments (stored as strings)
+    segment_ids: v.array(v.string()),
+  }),
 });

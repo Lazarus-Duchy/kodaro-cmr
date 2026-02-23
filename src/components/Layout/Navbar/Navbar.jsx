@@ -1,12 +1,10 @@
-import { AppShell, NavLink, Text, Avatar, Group, Box, Badge, Divider, ActionIcon, useMantineColorScheme } from '@mantine/core';
+import { AppShell, NavLink, Text, Group, Box, Badge, Divider, ActionIcon, useMantineColorScheme } from '@mantine/core';
 import { 
   IconUsers, 
   IconAddressBook, 
   IconChartBar, 
   IconSpeakerphone, 
-  IconPoint, 
   IconSettings, 
-  IconLogout,
   IconSun,
   IconMoonStars, 
   IconShoppingCart
@@ -16,15 +14,21 @@ const navlinks = [
   { 
     header: 'People', 
     links: [
-      { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} />,},
-      { href: 'clients', label: 'Clients', icon: <IconUsers size={20} stroke={1.5} /> },
+      { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} /> },
+      { href: 'clients',  label: 'Clients',                                     icon: <IconUsers size={20} stroke={1.5} />        },
+    ]
+  },
+  {
+    header: 'Marketing',
+    links: [
+      { href: 'campaigns', label: 'Campaigns', description: 'Email, SMS & Social', icon: <IconSpeakerphone size={20} stroke={1.5} /> },
     ]
   },
   {
     header: 'Stats',
     links: [
-      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} /> },
-      { href: 'sales', label: 'Sales', icon: <IconShoppingCart size={20} stroke={1.5} /> },
+      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} />   },
+      { href: 'sales',   label: 'Sales',   icon: <IconShoppingCart size={20} stroke={1.5} /> },
     ]
   }
 ];
@@ -37,15 +41,14 @@ const Navbar = ({ pathSteps }) => {
 
   const mapNavLinks = (list, stack = 0, parentHref = '', isParentActive = true) => {
     if (stack < 0) stack = 0;
-    
     if (stack > maxStackSize) {
       console.warn(`Stack reached it's limit! (${maxStackSize})`);
       return;
     }
 
     return list.map((item, index) => {
-      const fullHref = `${parentHref}/${item.href}`;
-      const isItemActive = isParentActive && pathSteps.length > stack + 1 && pathSteps[stack + 1].hrefPart == item.href;
+      const fullHref    = `${parentHref}/${item.href}`;
+      const isItemActive = isParentActive && pathSteps.length > stack + 1 && pathSteps[stack + 1].hrefPart === item.href;
 
       return (
         <NavLink
@@ -68,13 +71,13 @@ const Navbar = ({ pathSteps }) => {
               fontWeight: isItemActive ? 600 : 500,
               fontSize: '14px',
             },
-            description: { fontSize: '11px' }
+            description: { fontSize: '11px' },
           }}
           variant="light"
           color="clientFlow.4"
           defaultOpened={isItemActive}
         >
-          {item.children && item.children.length > 0 ? mapNavLinks(item.children, stack + 1, fullHref, isItemActive) : ""}
+          {item.children?.length ? mapNavLinks(item.children, stack + 1, fullHref, isItemActive) : ''}
         </NavLink>
       );
     });
@@ -95,23 +98,18 @@ const Navbar = ({ pathSteps }) => {
 
       <AppShell.Section>
         <Divider my="sm" />
-
         <Group justify="space-between" px="xs" mb="xs">
           <Text size="xs" c="dimmed" fw={500}>Appearance</Text>
-          <ActionIcon 
-            onClick={() => toggleColorScheme()} 
-            variant="default" 
-            size="sm" 
+          <ActionIcon
+            onClick={() => toggleColorScheme()}
+            variant="default"
+            size="sm"
             radius="md"
             title="Toggle color scheme"
           >
             {isDark ? <IconSun size={16} /> : <IconMoonStars size={16} />}
           </ActionIcon>
         </Group>
-
-       
-
-  
       </AppShell.Section>
     </AppShell.Navbar>
   );
