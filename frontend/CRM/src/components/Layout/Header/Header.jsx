@@ -96,16 +96,6 @@ const Header = ({ opened, toggle }) => {
                 >
                   Zaloguj się
                 </Button>
-                <Button
-                  variant="filled"
-                  color="clientFlow.4"
-                  radius="md"
-                  size="sm"
-                  leftSection={<IconUserPlus size={16} />}
-                  onClick={openRegister}
-                >
-                  Zarejestruj się
-                </Button>
               </>
             )}
           </Group>

@@ -4,7 +4,6 @@ import Contacts from "../Sections/Contacts/Contacts";
 import Home from "../Sections/Home/Home";
 import Sales from "../Sections/Sales/Sales";
 import Reports from "../Sections/Reports/Reports";
-import Marketing from "../Sections/Marketing/Marketing";
 import Clients from "../Sections/Clients/Clients";
 import ProtectedRoute from "../Auth/ProtectedRoute";
 
@@ -22,9 +21,6 @@ export const RouterSwitcher = () => {
       } />
       <Route path="/clients" element={
         <ProtectedRoute><Clients /></ProtectedRoute>
-      } />
-      <Route path="/marketing" element={
-        <ProtectedRoute><Marketing /></ProtectedRoute>
       } />
       <Route path="/reports" element={
         <ProtectedRoute><Reports /></ProtectedRoute>
