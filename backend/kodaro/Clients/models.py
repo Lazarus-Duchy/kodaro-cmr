@@ -1,227 +1,93 @@
-from datetime import date
-
-from django.db.models import Sum, Count
-from rest_framework import generics, filters, status
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from .models import Rescue
-from .serializers import RescueListSerializer, RescueSerializer
+import uuid
+from django.db import models
+from django.conf import settings
 
 
-def base_queryset():
-    return Rescue.objects.select_related(
-        "equipment", "equipment__category", "survivor"
+class Survivor(models.Model):
+
+    class Status(models.TextChoices):
+        LEAD = "lead", "Lead"
+        PROSPECT = "prospect", "Prospect"
+        ACTIVE = "active", "Active"
+        INACTIVE = "inactive", "Inactive"
+        CHURNED = "churned", "Churned"
+
+    class Industry(models.TextChoices):
+        TECHNOLOGY = "technology", "Technology"
+        FINANCE = "finance", "Finance"
+        HEALTHCARE = "healthcare", "Healthcare"
+        RETAIL = "retail", "Retail"
+        MANUFACTURING = "manufacturing", "Manufacturing"
+        EDUCATION = "education", "Education"
+        REAL_ESTATE = "real_estate", "Real Estate"
+        LOGISTICS = "logistics", "Logistics"
+        OTHER = "other", "Other"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.LEAD)
+    industry = models.CharField(max_length=50, choices=Industry.choices, default=Industry.OTHER, blank=True)
+
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    website = models.URLField(blank=True)
+
+    address_line1 = models.CharField(max_length=255, blank=True)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    postal_code = models.CharField(max_length=20, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+
+    notes = models.TextField(blank=True)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="assigned_survivors",
     )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="created_survivors",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Survivor"
+        verbose_name_plural = "Survivors"
+
+    def __str__(self):
+        return self.name
 
 
-# ── CRUD ──────────────────────────────────────────────────────────────────────
+class SurvivorContact(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    survivor = models.ForeignKey(Survivor, on_delete=models.CASCADE, related_name="contacts")
 
-class PurchaseListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /rescues/   → List all rescue operations (search + ordering).
-    POST /rescues/   → Log a new rescue operation.
-    """
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["equipment__name", "equipment__sku", "survivor__name", "notes"]
-    ordering_fields = ["date", "equipment_cost", "created_at", "outcome"]
-    ordering = ["-date"]
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    job_title = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    is_primary = models.BooleanField(default=False, help_text="Primary contact for this survivor")
+    notes = models.TextField(blank=True)
 
-    def get_queryset(self):
-        return base_queryset()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def get_serializer_class(self):
-        return RescueSerializer if self.request.method == "POST" else RescueListSerializer
+    class Meta:
+        ordering = ["-is_primary", "last_name"]
+        verbose_name = "Survivor Contact"
+        verbose_name_plural = "Survivor Contacts"
 
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.survivor.name})"
 
-class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET    /rescues/<id>/   → Full rescue operation detail.
-    PATCH  /rescues/<id>/   → Update a rescue operation record.
-    DELETE /rescues/<id>/   → Delete a rescue record (admin only).
-    """
-    serializer_class = RescueSerializer
-    queryset = base_queryset()
-
-    def get_permissions(self):
-        if self.request.method == "DELETE":
-            return [IsAdminUser()]
-        return [IsAuthenticated()]
-
-
-# ── Filtered views ─────────────────────────────────────────────────────────────
-
-class PurchasesByProductView(generics.ListAPIView):
-    """
-    GET /rescues/by-equipment/<equipment_id>/
-    All rescue operations that used a specific piece of equipment.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return base_queryset().filter(equipment_id=self.kwargs["product_id"])
-
-
-class PurchasesByDayView(generics.ListAPIView):
-    """
-    GET /rescues/by-day/<YYYY-MM-DD>/
-    All rescue operations on a specific date.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        raw = self.kwargs["date"]
-        try:
-            target = date.fromisoformat(raw)
-        except ValueError:
-            raise ValidationError({"date": "Invalid date format. Use YYYY-MM-DD."})
-        return base_queryset().filter(date=target)
-
-
-class PurchasesByCategoryView(generics.ListAPIView):
-    """
-    GET /rescues/by-category/<category_id>/
-    All rescue operations using equipment from a specific category.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return base_queryset().filter(equipment__category_id=self.kwargs["category_id"])
-
-
-class PurchasesByMonthYearView(generics.ListAPIView):
-    """
-    GET /rescues/by-month/<YYYY>/<MM>/
-    All rescue operations in a specific month of a specific year.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        year = self.kwargs["year"]
-        month = self.kwargs["month"]
-        if not (1 <= month <= 12):
-            raise ValidationError({"month": "Month must be between 1 and 12."})
-        return base_queryset().filter(date__year=year, date__month=month)
-
-
-class PurchasesByMonthAllYearsView(generics.ListAPIView):
-    """
-    GET /rescues/by-month/<MM>/
-    All rescue operations in a given month across ALL years.
-    Useful for identifying seasonal patterns, e.g. every January.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        month = self.kwargs["month"]
-        if not (1 <= month <= 12):
-            raise ValidationError({"month": "Month must be between 1 and 12."})
-        return base_queryset().filter(date__month=month)
-
-
-class PurchasesByClientView(generics.ListAPIView):
-    """
-    GET /rescues/by-survivor/<survivor_id>/
-    All rescue operations involving a specific survivor.
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return base_queryset().filter(survivor_id=self.kwargs["client_id"])
-
-
-class PurchasesOverPriceView(APIView):
-    """
-    GET /rescues/over-cost/?price=<amount>&currency=<code>
-    All rescue operations where equipment cost exceeds the given threshold.
-    Both `price` and `currency` are required query params.
-
-    Example: /rescues/over-cost/?price=500&currency=PLN
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        price    = request.query_params.get("price")
-        currency = request.query_params.get("currency")
-
-        if not price or not currency:
-            raise ValidationError({"detail": "Both `price` and `currency` query params are required."})
-
-        try:
-            price = float(price)
-        except ValueError:
-            raise ValidationError({"price": "Must be a valid number."})
-
-        qs = base_queryset().filter(equipment_cost__gt=price, currency=currency.upper())
-        serializer = RescueListSerializer(qs, many=True)
-        return Response(serializer.data)
-
-
-class PurchasesByClientCountryView(generics.ListAPIView):
-    """
-    GET /rescues/by-country/<country>/
-    All rescue operations involving survivors from a given country.
-
-    Example: /rescues/by-country/Poland/
-    """
-    serializer_class = RescueListSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return base_queryset().filter(survivor__country__iexact=self.kwargs["country"])
-
-
-# ── Stats ──────────────────────────────────────────────────────────────────────
-
-class PurchaseStatsView(APIView):
-    """
-    GET /rescues/stats/
-    Aggregated rescue operation statistics.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        totals = Rescue.objects.aggregate(
-            total_operations=Count("id"),
-            total_equipment_deployed=Sum("equipment_quantity"),
-        )
-        by_outcome = (
-            Rescue.objects
-            .values("outcome")
-            .annotate(count=Count("id"))
-            .order_by("outcome")
-        )
-        by_currency = (
-            Rescue.objects
-            .values("currency")
-            .annotate(count=Count("id"), total_cost_net=Sum("equipment_cost"))
-            .order_by("currency")
-        )
-        most_used_equipment = (
-            Rescue.objects
-            .values("equipment__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
-        most_assisted_survivors = (
-            Rescue.objects
-            .values("survivor__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:5]
-        )
-        return Response({
-            "totals":                   totals,
-            "by_outcome":               list(by_outcome),
-            "by_currency":              list(by_currency),
-            "most_used_equipment":      list(most_used_equipment),
-            "most_assisted_survivors":  list(most_assisted_survivors),
-        })
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
