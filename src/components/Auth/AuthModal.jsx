@@ -15,16 +15,17 @@ const AuthModal = ({ opened, onClose }) => {
   const [loading, setLoading]   = useState(false);
 
   const reset = () => {
-    setEmail('');    // was setUsername
+    setEmail('');
     setPassword('');
     setError('');
   };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!email || !password) {
-      setError('Wypełnij wszystkie pola.');
+      setError('Please fill in all fields.');
       return;
     }
 
@@ -35,7 +36,7 @@ const AuthModal = ({ opened, onClose }) => {
       onClose();
     } catch (err) {
       const detail = err?.response?.data?.detail;
-      setError(detail ?? 'Nieprawidłowa nazwa użytkownika lub hasło.');
+      setError(detail ?? 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ const AuthModal = ({ opened, onClose }) => {
       title={
         <Group gap="xs">
           <IconLogin size={20} />
-          <Title order={4}>Zaloguj się</Title>
+          <Title order={4}>Sign in</Title>
         </Group>
       }
     >
@@ -65,7 +66,7 @@ const AuthModal = ({ opened, onClose }) => {
         <Stack gap="sm">
           <TextInput
             label="Email"
-            placeholder="jan@kowalski.pl"
+            placeholder="john@example.com"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -74,8 +75,8 @@ const AuthModal = ({ opened, onClose }) => {
             autoFocus
           />
           <PasswordInput
-            label="Hasło"
-            placeholder="Twoje hasło"
+            label="Password"
+            placeholder="Your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             radius="md"
@@ -90,7 +91,7 @@ const AuthModal = ({ opened, onClose }) => {
             loading={loading}
             leftSection={<IconLogin size={16} />}
           >
-            Zaloguj się
+            Sign in
           </Button>
         </Stack>
       </form>
