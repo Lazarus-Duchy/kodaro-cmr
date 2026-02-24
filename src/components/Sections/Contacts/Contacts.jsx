@@ -62,6 +62,8 @@ const tableValidation = {
   first_name: (v) => (!v ? 'Name is required' : null),
   last_name:  (v) => (!v ? 'Surname is required' : null),
   email:      (v) => (!v ? 'Email is required' : !/^\S+@\S+$/.test(v) ? 'Invalid email' : null),
+  status:  (v) => (!v ? 'Status is required' : null),
+  employment_type:  (v) => (!v ? 'Employement type is required' : null),
 };
 
 // ── Default values matching backend model defaults ───────────────────────────
@@ -143,12 +145,14 @@ const Contacts = () => {
     <Select
       key={form.key('employment_type')}
       label="Employment Type"
+      withAsterisk
       data={EMPLOYMENT_TYPE_OPTIONS}
       {...form.getInputProps('employment_type')}
     />,
     <Select
       key={form.key('status')}
       label="Status"
+      withAsterisk
       data={STATUS_OPTIONS}
       {...form.getInputProps('status')}
     />,
