@@ -7,13 +7,13 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Purchase
-from .serializers import PurchaseListSerializer, PurchaseSerializer
+from .models import Rescue
+from .serializers import RescueListSerializer, RescueSerializer
 
 
 def base_queryset():
-    return Purchase.objects.select_related(
-        "product", "product__category", "client"
+    return Rescue.objects.select_related(
+        "equipment", "equipment__category", "survivor"
     )
 
 
@@ -21,29 +21,29 @@ def base_queryset():
 
 class PurchaseListCreateView(generics.ListCreateAPIView):
     """
-    GET  /purchases/        → List all purchases (search + ordering).
-    POST /purchases/        → Create a purchase.
+    GET  /rescues/   → List all rescue operations (search + ordering).
+    POST /rescues/   → Log a new rescue operation.
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["product__name", "product__sku", "client__name"]
-    ordering_fields = ["date", "unit_price", "created_at"]
+    search_fields = ["equipment__name", "equipment__sku", "survivor__name", "notes"]
+    ordering_fields = ["date", "equipment_cost", "created_at", "outcome"]
     ordering = ["-date"]
 
     def get_queryset(self):
         return base_queryset()
 
     def get_serializer_class(self):
-        return PurchaseSerializer if self.request.method == "POST" else PurchaseListSerializer
+        return RescueSerializer if self.request.method == "POST" else RescueListSerializer
 
 
 class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /purchases/<id>/   → Full purchase detail.
-    PATCH  /purchases/<id>/   → Update a purchase.
-    DELETE /purchases/<id>/   → Delete a purchase (admin only).
+    GET    /rescues/<id>/   → Full rescue operation detail.
+    PATCH  /rescues/<id>/   → Update a rescue operation record.
+    DELETE /rescues/<id>/   → Delete a rescue record (admin only).
     """
-    serializer_class = PurchaseSerializer
+    serializer_class = RescueSerializer
     queryset = base_queryset()
 
     def get_permissions(self):
@@ -56,22 +56,22 @@ class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class PurchasesByProductView(generics.ListAPIView):
     """
-    GET /purchases/by-product/<product_id>/
-    All purchases of a specific product.
+    GET /rescues/by-equipment/<equipment_id>/
+    All rescue operations that used a specific piece of equipment.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return base_queryset().filter(product_id=self.kwargs["product_id"])
+        return base_queryset().filter(equipment_id=self.kwargs["product_id"])
 
 
 class PurchasesByDayView(generics.ListAPIView):
     """
-    GET /purchases/by-day/<YYYY-MM-DD>/
-    All purchases on a specific date.
+    GET /rescues/by-day/<YYYY-MM-DD>/
+    All rescue operations on a specific date.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -85,23 +85,22 @@ class PurchasesByDayView(generics.ListAPIView):
 
 class PurchasesByCategoryView(generics.ListAPIView):
     """
-    GET /purchases/by-category/<category_id>/
-    All purchases of products belonging to a category.
+    GET /rescues/by-category/<category_id>/
+    All rescue operations using equipment from a specific category.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return base_queryset().filter(product__category_id=self.kwargs["category_id"])
+        return base_queryset().filter(equipment__category_id=self.kwargs["category_id"])
 
 
 class PurchasesByMonthYearView(generics.ListAPIView):
     """
-    GET /purchases/by-month/<YYYY>/<MM>/
-    All purchases in a specific month of a specific year.
-    e.g. /purchases/by-month/2024/03/
+    GET /rescues/by-month/<YYYY>/<MM>/
+    All rescue operations in a specific month of a specific year.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -114,11 +113,11 @@ class PurchasesByMonthYearView(generics.ListAPIView):
 
 class PurchasesByMonthAllYearsView(generics.ListAPIView):
     """
-    GET /purchases/by-month/<MM>/
-    All purchases in a given month number across ALL years.
-    e.g. /purchases/by-month/03/ → every March, regardless of year.
+    GET /rescues/by-month/<MM>/
+    All rescue operations in a given month across ALL years.
+    Useful for identifying seasonal patterns, e.g. every January.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -130,28 +129,28 @@ class PurchasesByMonthAllYearsView(generics.ListAPIView):
 
 class PurchasesByClientView(generics.ListAPIView):
     """
-    GET /purchases/by-client/<client_id>/
-    All purchases made by a specific client.
+    GET /rescues/by-survivor/<survivor_id>/
+    All rescue operations involving a specific survivor.
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return base_queryset().filter(client_id=self.kwargs["client_id"])
+        return base_queryset().filter(survivor_id=self.kwargs["client_id"])
 
 
 class PurchasesOverPriceView(APIView):
     """
-    GET /purchases/over-price/?price=<amount>&currency=<code>
-    All purchases where the unit_price exceeds the given threshold.
+    GET /rescues/over-cost/?price=<amount>&currency=<code>
+    All rescue operations where equipment cost exceeds the given threshold.
     Both `price` and `currency` are required query params.
 
-    Example: /purchases/over-price/?price=500&currency=PLN
+    Example: /rescues/over-cost/?price=500&currency=PLN
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        price = request.query_params.get("price")
+        price    = request.query_params.get("price")
         currency = request.query_params.get("currency")
 
         if not price or not currency:
@@ -162,63 +161,67 @@ class PurchasesOverPriceView(APIView):
         except ValueError:
             raise ValidationError({"price": "Must be a valid number."})
 
-        qs = base_queryset().filter(unit_price__gt=price, currency=currency.upper())
-        serializer = PurchaseListSerializer(qs, many=True)
+        qs = base_queryset().filter(equipment_cost__gt=price, currency=currency.upper())
+        serializer = RescueListSerializer(qs, many=True)
         return Response(serializer.data)
 
 
 class PurchasesByClientCountryView(generics.ListAPIView):
     """
-    GET /purchases/by-country/<country>/
-    All purchases made by clients from a given country.
-    The country value should match what is stored on the Client model.
+    GET /rescues/by-country/<country>/
+    All rescue operations involving survivors from a given country.
 
-    Example: /purchases/by-country/Poland/
-             /purchases/by-country/Germany/
+    Example: /rescues/by-country/Poland/
     """
-    serializer_class = PurchaseListSerializer
+    serializer_class = RescueListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        country = self.kwargs["country"]
-        return base_queryset().filter(client__country__iexact=country)
+        return base_queryset().filter(survivor__country__iexact=self.kwargs["country"])
 
 
 # ── Stats ──────────────────────────────────────────────────────────────────────
 
 class PurchaseStatsView(APIView):
     """
-    GET /purchases/stats/
-    Aggregated purchase statistics.
+    GET /rescues/stats/
+    Aggregated rescue operation statistics.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        totals = Purchase.objects.aggregate(
-            total_purchases=Count("id"),
-            total_quantity=Sum("quantity"),
+        totals = Rescue.objects.aggregate(
+            total_operations=Count("id"),
+            total_equipment_deployed=Sum("equipment_quantity"),
+        )
+        by_outcome = (
+            Rescue.objects
+            .values("outcome")
+            .annotate(count=Count("id"))
+            .order_by("outcome")
         )
         by_currency = (
-            Purchase.objects
+            Rescue.objects
             .values("currency")
-            .annotate(count=Count("id"), total_net=Sum("unit_price"))
+            .annotate(count=Count("id"), total_cost_net=Sum("equipment_cost"))
             .order_by("currency")
         )
-        top_products = (
-            Purchase.objects
-            .values("product__name")
+        most_used_equipment = (
+            Rescue.objects
+            .values("equipment__name")
             .annotate(count=Count("id"))
             .order_by("-count")[:5]
         )
-        top_clients = (
-            Purchase.objects
-            .values("client__name")
+        most_assisted_survivors = (
+            Rescue.objects
+            .values("survivor__name")
             .annotate(count=Count("id"))
             .order_by("-count")[:5]
         )
         return Response({
-            "totals": totals,
-            "by_currency": list(by_currency),
-            "top_products": list(top_products),
-            "top_clients": list(top_clients),
+            "totals":                   totals,
+            "by_outcome":               list(by_outcome),
+            "by_currency":              list(by_currency),
+            "most_used_equipment":      list(most_used_equipment),
+            "most_assisted_survivors":  list(most_assisted_survivors),
         })

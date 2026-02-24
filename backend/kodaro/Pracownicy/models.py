@@ -3,48 +3,44 @@ from django.db import models
 from django.conf import settings
 
 
-class Pracownik(models.Model):
+class Rescuer(models.Model):
 
     class Status(models.TextChoices):
-        AKTYWNY = "aktywny", "Aktywny"
-        NIEAKTYWNY = "nieaktywny", "Nieaktywny"
-        URLOP = "urlop", "Na urlopie"
-        ZWOLNIONY = "zwolniony", "Zwolniony"
-        STAZ = "staz", "Staż"
+        ACTIVE = "active", "Active"
+        INACTIVE = "inactive", "Inactive"
+        ON_LEAVE = "on_leave", "On Leave"
+        TERMINATED = "terminated", "Terminated"
+        INTERN = "intern", "Intern"
 
-    class Dzial(models.TextChoices):
+    class Department(models.TextChoices):
         IT = "it", "IT"
         HR = "hr", "HR"
-        FINANSE = "finanse", "Finanse"
-        SPRZEDAZ = "sprzedaz", "Sprzedaż"
+        FINANCE = "finance", "Finance"
+        SALES = "sales", "Sales"
         MARKETING = "marketing", "Marketing"
-        OPERACJE = "operacje", "Operacje"
-        ZARZAD = "zarzad", "Zarząd"
-        LOGISTYKA = "logistyka", "Logistyka"
-        INNY = "inny", "Inny"
+        OPERATIONS = "operations", "Operations"
+        MANAGEMENT = "management", "Management"
+        LOGISTICS = "logistics", "Logistics"
+        OTHER = "other", "Other"
 
-    class RodzajZatrudnienia(models.TextChoices):
-        ETAT = "etat", "Pełny etat"
-        CZESC_ETATU = "czesc_etatu", "Część etatu"
-        KONTRAKT = "kontrakt", "Kontrakt"
-        STAZ = "staz", "Staż"
+    class EmploymentType(models.TextChoices):
+        FULL_TIME = "full_time", "Full Time"
+        PART_TIME = "part_time", "Part Time"
+        CONTRACT = "contract", "Contract"
+        INTERN = "intern", "Intern"
         B2B = "b2b", "B2B"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.AKTYWNY)
-    dzial = models.CharField(max_length=50, choices=Dzial.choices, default=Dzial.INNY, blank=True)
-    rodzaj_zatrudnienia = models.CharField(
-        max_length=20, choices=RodzajZatrudnienia.choices, default=RodzajZatrudnienia.ETAT
-    )
-    stanowisko = models.CharField(max_length=150, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    department = models.CharField(max_length=50, choices=Department.choices, default=Department.OTHER, blank=True)
+    employment_type = models.CharField(max_length=20, choices=EmploymentType.choices, default=EmploymentType.FULL_TIME)
+    position = models.CharField(max_length=150, blank=True)
 
-    # Kontakt
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=30, blank=True)
 
-    # Adres
     address_line1 = models.CharField(max_length=255, blank=True)
     address_line2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100, blank=True)
@@ -52,33 +48,31 @@ class Pracownik(models.Model):
     postal_code = models.CharField(max_length=20, blank=True)
     country = models.CharField(max_length=100, blank=True)
 
-    # Zatrudnienie
-    data_zatrudnienia = models.DateField(null=True, blank=True)
-    data_zwolnienia = models.DateField(null=True, blank=True)
-    wynagrodzenie = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    hire_date = models.DateField(null=True, blank=True)
+    termination_date = models.DateField(null=True, blank=True)
+    salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
-    # Meta
     notes = models.TextField(blank=True)
-    przelozony = models.ForeignKey(
+    supervisor = models.ForeignKey(
         "self",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="podwladni",
+        related_name="subordinates",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         on_delete=models.SET_NULL,
-        related_name="created_pracownicy",
+        related_name="created_rescuers",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["last_name", "first_name"]
-        verbose_name = "Pracownik"
-        verbose_name_plural = "Pracownicy"
+        verbose_name = "Rescuer"
+        verbose_name_plural = "Rescuers"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -88,16 +82,16 @@ class Pracownik(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
 
-class KontaktAwaryjny(models.Model):
+class EmergencyContact(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    pracownik = models.ForeignKey(Pracownik, on_delete=models.CASCADE, related_name="kontakty_awaryjne")
+    rescuer = models.ForeignKey(Rescuer, on_delete=models.CASCADE, related_name="emergency_contacts")
 
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
-    relacja = models.CharField(max_length=100, blank=True, help_text="np. Małżonek, Rodzic, Brat")
+    relationship = models.CharField(max_length=100, blank=True, help_text="e.g. Spouse, Parent, Sibling")
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=30)
-    is_primary = models.BooleanField(default=False, help_text="Główny kontakt awaryjny")
+    is_primary = models.BooleanField(default=False, help_text="Primary emergency contact")
     notes = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -105,11 +99,11 @@ class KontaktAwaryjny(models.Model):
 
     class Meta:
         ordering = ["-is_primary", "last_name"]
-        verbose_name = "Kontakt awaryjny"
-        verbose_name_plural = "Kontakty awaryjne"
+        verbose_name = "Emergency Contact"
+        verbose_name_plural = "Emergency Contacts"
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.pracownik.full_name})"
+        return f"{self.first_name} {self.last_name} ({self.rescuer.full_name})"
 
     @property
     def full_name(self):

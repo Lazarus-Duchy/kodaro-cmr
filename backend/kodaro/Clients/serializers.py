@@ -1,40 +1,39 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Client, Contact
+from .models import Survivor, SurvivorContact
 
 User = get_user_model()
 
 
-class ContactSerializer(serializers.ModelSerializer):
+class SurvivorContactSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
 
     class Meta:
-        model = Contact
+        model = SurvivorContact
         fields = [
-            "id", "client", "first_name", "last_name", "full_name",
+            "id", "survivor", "first_name", "last_name", "full_name",
             "job_title", "email", "phone", "is_primary", "notes",
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
-class ContactInlineSerializer(serializers.ModelSerializer):
-    """Lightweight serializer used when embedding contacts inside a Client response."""
+class SurvivorContactInlineSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
 
     class Meta:
-        model = Contact
+        model = SurvivorContact
         fields = ["id", "full_name", "job_title", "email", "phone", "is_primary"]
 
 
-class ClientSerializer(serializers.ModelSerializer):
-    contacts = ContactInlineSerializer(many=True, read_only=True)
+class SurvivorSerializer(serializers.ModelSerializer):
+    contacts = SurvivorContactInlineSerializer(many=True, read_only=True)
     assigned_to_email = serializers.EmailField(source="assigned_to.email", read_only=True)
     created_by_email = serializers.EmailField(source="created_by.email", read_only=True)
 
     class Meta:
-        model = Client
+        model = Survivor
         fields = [
             "id", "name", "status", "industry",
             "email", "phone", "website",
@@ -51,13 +50,12 @@ class ClientSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class ClientListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list endpoints — no nested contacts."""
+class SurvivorListSerializer(serializers.ModelSerializer):
     assigned_to_email = serializers.EmailField(source="assigned_to.email", read_only=True)
     contact_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Client
+        model = Survivor
         fields = [
             "id", "name", "status", "industry",
             "email", "phone",

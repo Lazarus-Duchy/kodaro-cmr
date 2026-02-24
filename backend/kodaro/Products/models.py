@@ -12,19 +12,23 @@ class Category(models.Model):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "Category"
-        verbose_name_plural = "Categories"
+        verbose_name = "Equipment Category"
+        verbose_name_plural = "Equipment Categories"
 
     def __str__(self):
         return self.name
 
 
 class Product(models.Model):
+    """
+    Represents a piece of rescue equipment, vehicle, or supply item
+    managed by the Mountain Rescue Team.
+    """
 
     class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        INACTIVE = "inactive", "Inactive"
-        DISCONTINUED = "discontinued", "Discontinued"
+        AVAILABLE    = "available",     "Available"
+        UNAVAILABLE  = "unavailable",   "Unavailable (Under Maintenance)"
+        DECOMMISSIONED = "decommissioned", "Decommissioned"
 
     class Currency(models.TextChoices):
         PLN = "PLN", "PLN"
@@ -33,10 +37,20 @@ class Product(models.Model):
         GBP = "GBP", "GBP"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    sku = models.CharField(max_length=100, unique=True, blank=True, help_text="Stock Keeping Unit")
-    description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    name = models.CharField(max_length=255, help_text="Name of the equipment item or supply")
+    sku = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        help_text="Asset / Serial number used to identify this equipment",
+    )
+    description = models.TextField(blank=True, help_text="Additional notes, specs, or usage instructions")
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.AVAILABLE,
+        help_text="Current operational status of the equipment",
+    )
     category = models.ForeignKey(
         Category,
         null=True,
@@ -45,11 +59,18 @@ class Product(models.Model):
         related_name="products",
     )
 
-    # Pricing
-    price = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    # Valuation
+    price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Acquisition / replacement cost",
+    )
     currency = models.CharField(max_length=3, choices=Currency.choices, default=Currency.PLN)
     tax_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0.00,
+        max_digits=5,
+        decimal_places=2,
+        default=0.00,
         validators=[MinValueValidator(0)],
         help_text="Tax rate as a percentage, e.g. 23.00 for 23% VAT",
     )
@@ -66,8 +87,8 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["name"]
-        verbose_name = "Product"
-        verbose_name_plural = "Products"
+        verbose_name = "Equipment Item"
+        verbose_name_plural = "Equipment Items"
 
     def __str__(self):
         return f"{self.name} ({self.sku})" if self.sku else self.name
