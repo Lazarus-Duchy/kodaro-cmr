@@ -3,20 +3,18 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Client, Contact
+from .models import Survivor, SurvivorContact
 from .serializers import (
-    ClientListSerializer,
-    ClientSerializer,
-    ContactSerializer,
+    SurvivorListSerializer,
+    SurvivorSerializer,
+    SurvivorContactSerializer,
 )
 
 
-# ── Clients ───────────────────────────────────────────────────────────────────
-
-class ClientListCreateView(generics.ListCreateAPIView):
+class SurvivorListCreateView(generics.ListCreateAPIView):
     """
-    GET  /clients/          → List all clients (with search & ordering).
-    POST /clients/          → Create a new client.
+    GET  /survivors/   → List all survivors.
+    POST /survivors/   → Create a new survivor.
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -25,9 +23,8 @@ class ClientListCreateView(generics.ListCreateAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        qs = Client.objects.select_related("assigned_to", "created_by").prefetch_related("contacts")
+        qs = Survivor.objects.select_related("assigned_to", "created_by").prefetch_related("contacts")
 
-        # Optional query param filters
         status_param = self.request.query_params.get("status")
         industry_param = self.request.query_params.get("industry")
         assigned_to_me = self.request.query_params.get("mine")
@@ -43,18 +40,18 @@ class ClientListCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return ClientListSerializer
-        return ClientSerializer
+            return SurvivorListSerializer
+        return SurvivorSerializer
 
 
-class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
+class SurvivorDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /clients/<id>/   → Retrieve full client detail (with contacts).
-    PATCH  /clients/<id>/   → Update a client.
-    DELETE /clients/<id>/   → Delete a client (admin only).
+    GET    /survivors/<id>/   → Retrieve full survivor detail.
+    PATCH  /survivors/<id>/   → Update a survivor.
+    DELETE /survivors/<id>/   → Delete a survivor (admin only).
     """
-    serializer_class = ClientSerializer
-    queryset = Client.objects.select_related("assigned_to", "created_by").prefetch_related("contacts")
+    serializer_class = SurvivorSerializer
+    queryset = Survivor.objects.select_related("assigned_to", "created_by").prefetch_related("contacts")
 
     def get_permissions(self):
         if self.request.method == "DELETE":
@@ -62,47 +59,45 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
 
-# ── Contacts ──────────────────────────────────────────────────────────────────
-
-class ContactListCreateView(generics.ListCreateAPIView):
+class SurvivorContactListCreateView(generics.ListCreateAPIView):
     """
-    GET  /clients/<client_id>/contacts/   → List all contacts for a client.
-    POST /clients/<client_id>/contacts/   → Add a contact to a client.
+    GET  /survivors/<survivor_id>/contacts/   → List contacts.
+    POST /survivors/<survivor_id>/contacts/   → Add a contact.
     """
-    serializer_class = ContactSerializer
+    serializer_class = SurvivorContactSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Contact.objects.filter(client_id=self.kwargs["client_pk"])
+        return SurvivorContact.objects.filter(survivor_id=self.kwargs["survivor_pk"])
 
     def perform_create(self, serializer):
-        client = generics.get_object_or_404(Client, pk=self.kwargs["client_pk"])
-        serializer.save(client=client)
+        survivor = generics.get_object_or_404(Survivor, pk=self.kwargs["survivor_pk"])
+        serializer.save(survivor=survivor)
 
 
-class ContactDetailView(generics.RetrieveUpdateDestroyAPIView):
+class SurvivorContactDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /clients/<client_id>/contacts/<id>/   → Retrieve a contact.
-    PATCH  /clients/<client_id>/contacts/<id>/   → Update a contact.
-    DELETE /clients/<client_id>/contacts/<id>/   → Delete a contact.
+    GET    /survivors/<survivor_id>/contacts/<id>/   → Retrieve a contact.
+    PATCH  /survivors/<survivor_id>/contacts/<id>/   → Update a contact.
+    DELETE /survivors/<survivor_id>/contacts/<id>/   → Delete a contact.
     """
-    serializer_class = ContactSerializer
+    serializer_class = SurvivorContactSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Contact.objects.filter(client_id=self.kwargs["client_pk"])
+        return SurvivorContact.objects.filter(survivor_id=self.kwargs["survivor_pk"])
 
 
-class ClientStatsView(APIView):
+class SurvivorStatsView(APIView):
     """
-    GET /clients/stats/   → Aggregated counts by status (admin/internal use).
+    GET /survivors/stats/   → Aggregated counts by status.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         from django.db.models import Count
         stats = (
-            Client.objects
+            Survivor.objects
             .values("status")
             .annotate(count=Count("id"))
             .order_by("status")

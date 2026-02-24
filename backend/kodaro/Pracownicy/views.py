@@ -1,63 +1,48 @@
-from rest_framework import generics, filters, status
+from rest_framework import generics, filters
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Pracownik, KontaktAwaryjny
+from .models import Rescuer, EmergencyContact
 from .serializers import (
-    PracownikListSerializer,
-    PracownikSerializer,
-    KontaktAwaryjnySerializer,
+    RescuerListSerializer,
+    RescuerSerializer,
+    EmergencyContactSerializer,
 )
 
 
-# ── Pracownicy ────────────────────────────────────────────────────────────────
-
-class PracownikListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /pracownicy/          → Lista wszystkich pracowników (z wyszukiwaniem i sortowaniem).
-    POST /pracownicy/          → Utwórz nowego pracownika.
-    """
+class RescuerListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["first_name", "last_name", "email", "stanowisko", "city", "country"]
-    ordering_fields = ["last_name", "status", "dzial", "data_zatrudnienia", "created_at"]
+    search_fields = ["first_name", "last_name", "email", "position", "city", "country"]
+    ordering_fields = ["last_name", "status", "department", "hire_date", "created_at"]
     ordering = ["last_name", "first_name"]
 
     def get_queryset(self):
-        qs = Pracownik.objects.select_related("przelozony", "created_by").prefetch_related("kontakty_awaryjne")
+        qs = Rescuer.objects.select_related("supervisor", "created_by").prefetch_related("emergency_contacts")
 
-        # Optional query param filters
         status_param = self.request.query_params.get("status")
-        dzial_param = self.request.query_params.get("dzial")
-        rodzaj_param = self.request.query_params.get("rodzaj_zatrudnienia")
-        moi_podwladni = self.request.query_params.get("podwladni")
+        department_param = self.request.query_params.get("department")
+        employment_type_param = self.request.query_params.get("employment_type")
 
         if status_param:
             qs = qs.filter(status=status_param)
-        if dzial_param:
-            qs = qs.filter(dzial=dzial_param)
-        if rodzaj_param:
-            qs = qs.filter(rodzaj_zatrudnienia=rodzaj_param)
-        if moi_podwladni:
-            qs = qs.filter(przelozony=self.request.user)
+        if department_param:
+            qs = qs.filter(department=department_param)
+        if employment_type_param:
+            qs = qs.filter(employment_type=employment_type_param)
 
         return qs
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return PracownikListSerializer
-        return PracownikSerializer
+            return RescuerListSerializer
+        return RescuerSerializer
 
 
-class PracownikDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET    /pracownicy/<id>/   → Pobierz szczegóły pracownika (z kontaktami awaryjnymi).
-    PATCH  /pracownicy/<id>/   → Zaktualizuj dane pracownika.
-    DELETE /pracownicy/<id>/   → Usuń pracownika (tylko admin).
-    """
-    serializer_class = PracownikSerializer
-    queryset = Pracownik.objects.select_related("przelozony", "created_by").prefetch_related("kontakty_awaryjne")
+class RescuerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = RescuerSerializer
+    queryset = Rescuer.objects.select_related("supervisor", "created_by").prefetch_related("emergency_contacts")
 
     def get_permissions(self):
         if self.request.method == "DELETE":
@@ -65,59 +50,45 @@ class PracownikDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
 
-# ── Kontakty awaryjne ─────────────────────────────────────────────────────────
-
-class KontaktAwaryjnyListCreateView(generics.ListCreateAPIView):
-    """
-    GET  /pracownicy/<pracownik_id>/kontakty/   → Lista kontaktów awaryjnych pracownika.
-    POST /pracownicy/<pracownik_id>/kontakty/   → Dodaj kontakt awaryjny do pracownika.
-    """
-    serializer_class = KontaktAwaryjnySerializer
+class EmergencyContactListCreateView(generics.ListCreateAPIView):
+    serializer_class = EmergencyContactSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return KontaktAwaryjny.objects.filter(pracownik_id=self.kwargs["pracownik_pk"])
+        return EmergencyContact.objects.filter(rescuer_id=self.kwargs["rescuer_pk"])
 
     def perform_create(self, serializer):
-        pracownik = generics.get_object_or_404(Pracownik, pk=self.kwargs["pracownik_pk"])
-        serializer.save(pracownik=pracownik)
+        rescuer = generics.get_object_or_404(Rescuer, pk=self.kwargs["rescuer_pk"])
+        serializer.save(rescuer=rescuer)
 
 
-class KontaktAwaryjnyDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET    /pracownicy/<pracownik_id>/kontakty/<id>/   → Pobierz kontakt awaryjny.
-    PATCH  /pracownicy/<pracownik_id>/kontakty/<id>/   → Zaktualizuj kontakt awaryjny.
-    DELETE /pracownicy/<pracownik_id>/kontakty/<id>/   → Usuń kontakt awaryjny.
-    """
-    serializer_class = KontaktAwaryjnySerializer
+class EmergencyContactDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = EmergencyContactSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return KontaktAwaryjny.objects.filter(pracownik_id=self.kwargs["pracownik_pk"])
+        return EmergencyContact.objects.filter(rescuer_id=self.kwargs["rescuer_pk"])
 
 
-class PracownikStatsView(APIView):
-    """
-    GET /pracownicy/stats/   → Zagregowane liczby według statusu i działu (admin/internal use).
-    """
+class RescuerStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         from django.db.models import Count
 
         stats_status = (
-            Pracownik.objects
+            Rescuer.objects
             .values("status")
             .annotate(count=Count("id"))
             .order_by("status")
         )
-        stats_dzial = (
-            Pracownik.objects
-            .values("dzial")
+        stats_department = (
+            Rescuer.objects
+            .values("department")
             .annotate(count=Count("id"))
-            .order_by("dzial")
+            .order_by("department")
         )
         return Response({
             "by_status": {item["status"]: item["count"] for item in stats_status},
-            "by_dzial": {item["dzial"]: item["count"] for item in stats_dzial},
+            "by_department": {item["department"]: item["count"] for item in stats_department},
         })

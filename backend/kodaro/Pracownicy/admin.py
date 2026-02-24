@@ -1,83 +1,83 @@
 from django.contrib import admin
 
-from .models import Pracownik, KontaktAwaryjny
+from .models import Rescuer, EmergencyContact
 
 
-class KontaktAwaryjnyInline(admin.TabularInline):
-    model = KontaktAwaryjny
+class EmergencyContactInline(admin.TabularInline):
+    model = EmergencyContact
     extra = 0
-    fields = ["first_name", "last_name", "relacja", "email", "phone", "is_primary"]
+    fields = ["first_name", "last_name", "relationship", "email", "phone", "is_primary"]
     ordering = ["-is_primary", "last_name"]
 
 
-@admin.register(Pracownik)
-class PracownikAdmin(admin.ModelAdmin):
+@admin.register(Rescuer)
+class RescuerAdmin(admin.ModelAdmin):
     list_display = [
-        "full_name", "status", "dzial", "stanowisko",
-        "rodzaj_zatrudnienia", "email", "city", "data_zatrudnienia",
+        "full_name", "status", "department", "position",
+        "employment_type", "email", "city", "hire_date",
     ]
-    list_filter = ["status", "dzial", "rodzaj_zatrudnienia", "country"]
-    search_fields = ["first_name", "last_name", "email", "stanowisko", "city"]
+    list_filter = ["status", "department", "employment_type", "country"]
+    search_fields = ["first_name", "last_name", "email", "position", "city"]
     ordering = ["last_name", "first_name"]
     readonly_fields = ["id", "created_by", "created_at", "updated_at"]
-    autocomplete_fields = ["przelozony"]
-    inlines = [KontaktAwaryjnyInline]
+    autocomplete_fields = ["supervisor"]
+    inlines = [EmergencyContactInline]
 
     fieldsets = (
         (None, {
-            "fields": ("id", "first_name", "last_name", "status", "dzial"),
+            "fields": ("id", "first_name", "last_name", "status", "department"),
         }),
-        ("Stanowisko", {
-            "fields": ("stanowisko", "rodzaj_zatrudnienia", "przelozony"),
+        ("Position", {
+            "fields": ("position", "employment_type", "supervisor"),
         }),
-        ("Dane kontaktowe", {
+        ("Contact Info", {
             "fields": ("email", "phone"),
         }),
-        ("Adres", {
+        ("Address", {
             "classes": ("collapse",),
             "fields": ("address_line1", "address_line2", "city", "state", "postal_code", "country"),
         }),
-        ("Zatrudnienie", {
-            "fields": ("data_zatrudnienia", "data_zwolnienia", "wynagrodzenie"),
+        ("Employment", {
+            "fields": ("hire_date", "termination_date", "salary"),
         }),
-        ("Notatki", {
+        ("Notes", {
             "fields": ("notes",),
         }),
-        ("Metadane", {
+        ("Metadata", {
             "classes": ("collapse",),
             "fields": ("created_by", "created_at", "updated_at"),
         }),
     )
 
     def save_model(self, request, obj, form, change):
-        if not change:  # tylko przy tworzeniu
+        if not change:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
 
-@admin.register(KontaktAwaryjny)
-class KontaktAwaryjnyAdmin(admin.ModelAdmin):
-    list_display = ["full_name", "pracownik", "relacja", "email", "phone", "is_primary"]
-    list_filter = ["is_primary", "pracownik__status"]
-    search_fields = ["first_name", "last_name", "email", "pracownik__first_name", "pracownik__last_name"]
+@admin.register(EmergencyContact)
+class EmergencyContactAdmin(admin.ModelAdmin):
+    list_display = ["full_name", "rescuer", "relationship", "email", "phone", "is_primary"]
+    list_filter = ["is_primary", "rescuer__status"]
+    search_fields = ["first_name", "last_name", "email", "rescuer__first_name", "rescuer__last_name"]
     ordering = ["last_name"]
     readonly_fields = ["id", "created_at", "updated_at"]
-    autocomplete_fields = ["pracownik"]
+    autocomplete_fields = ["rescuer"]
 
     fieldsets = (
         (None, {
-            "fields": ("id", "pracownik", "is_primary"),
+            "fields": ("id", "rescuer", "is_primary"),
         }),
-        ("Dane osobowe", {
-            "fields": ("first_name", "last_name", "relacja"),
+        ("Personal Info", {
+            "fields": ("first_name", "last_name", "relationship"),
         }),
-        ("Dane kontaktowe", {
+        ("Contact Details", {
             "fields": ("email", "phone"),
         }),
-        ("Notatki", {
+        ("Notes", {
             "fields": ("notes",),
         }),
-        ("Metadane", {
+        ("Metadata", {
             "classes": ("collapse",),
             "fields": ("created_at", "updated_at"),
         }),
