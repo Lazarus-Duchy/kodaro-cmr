@@ -1,6 +1,6 @@
 import { Container, Title, Text, Button, Group, Stack, Grid, Paper, ThemeIcon, rem, Image } from '@mantine/core';
 import { IconRocket, IconChartBar, IconShieldCheck } from '@tabler/icons-react';
-import logo from '../../../assets/ClientFlow.png';
+import logo from "../../../../public/logo.png";
 import { useNavigate } from "react-router-dom";
 const Home = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ const Home = () => {
         <Stack align="center" ta="center" gap={0} py={10}>
           <Image 
             src={logo} 
-            alt="ClientFlow Logo" 
+            alt="SummitFlow Logo" 
             h={450} 
             w="auto" 
             mb={-10} 
