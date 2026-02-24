@@ -13,7 +13,7 @@ class Purchase(models.Model):
         related_name="purchases",
     )
     client = models.ForeignKey(
-        "Clients.Client",
+        "Clients.Survivor",
         on_delete=models.PROTECT,
         related_name="purchases",
     )

@@ -11,11 +11,11 @@ from Users.views import (
     UserListView,
 )
 from Clients.views import (
-    ClientDetailView,
-    ClientListCreateView,
-    ClientStatsView,
-    ContactDetailView,
-    ContactListCreateView,
+    SurvivorDetailView,
+    SurvivorListCreateView,
+    SurvivorStatsView,
+    SurvivorContactDetailView,
+    SurvivorContactListCreateView,
 )
 
 from Products.views import (
@@ -46,6 +46,7 @@ from Pracownicy.views import (
     KontaktAwaryjnyListCreateView,
     KontaktAwaryjnyDetailView,
 )
+
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────────────────
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
@@ -60,17 +61,17 @@ urlpatterns = [
     # ── Admin ─────────────────────────────────────────────────────────────────
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/<uuid:pk>/", UserDetailView.as_view(), name="user-detail"),
-    
-    # ── Clients ───────────────────────────────────────────────────────────────
-    path("clients/", ClientListCreateView.as_view(), name="client-list"),
-    path("clients/stats/", ClientStatsView.as_view(), name="client-stats"),
-    path("clients/<uuid:pk>/", ClientDetailView.as_view(), name="client-detail"),
 
-    # ── Contacts (nested under a client) ─────────────────────────────────────
-    path("clients/<uuid:client_pk>/contacts/", ContactListCreateView.as_view(), name="contact-list"),
-    path("clients/<uuid:client_pk>/contacts/<uuid:pk>/", ContactDetailView.as_view(), name="contact-detail"),
+    # ── Survivors ─────────────────────────────────────────────────────────────
+    path("survivors/", SurvivorListCreateView.as_view(), name="survivor-list"),
+    path("survivors/stats/", SurvivorStatsView.as_view(), name="survivor-stats"),
+    path("survivors/<uuid:pk>/", SurvivorDetailView.as_view(), name="survivor-detail"),
 
-     # ── Categories ────────────────────────────────────────────────────────────
+    # ── Survivor Contacts (nested) ────────────────────────────────────────────
+    path("survivors/<uuid:survivor_pk>/contacts/", SurvivorContactListCreateView.as_view(), name="survivor-contact-list"),
+    path("survivors/<uuid:survivor_pk>/contacts/<uuid:pk>/", SurvivorContactDetailView.as_view(), name="survivor-contact-detail"),
+
+    # ── Categories ────────────────────────────────────────────────────────────
     path("products/categories/", CategoryListCreateView.as_view(), name="category-list"),
     path("products/categories/<uuid:pk>/", CategoryDetailView.as_view(), name="category-detail"),
 
@@ -79,41 +80,27 @@ urlpatterns = [
     path("products/stats/", ProductStatsView.as_view(), name="product-stats"),
     path("products/<uuid:pk>/", ProductDetailView.as_view(), name="product-detail"),
 
-        # ── CRUD ──────────────────────────────────────────────────────────────────
+    # ── Purchases CRUD ────────────────────────────────────────────────────────
     path("purchases/", PurchaseListCreateView.as_view(), name="purchase-list"),
     path("purchases/stats/", PurchaseStatsView.as_view(), name="purchase-stats"),
     path("purchases/<uuid:pk>/", PurchaseDetailView.as_view(), name="purchase-detail"),
 
-    # ── Filtered views ─────────────────────────────────────────────────────────
-    # All purchases of a product
+    # ── Purchases filtered ────────────────────────────────────────────────────
     path("purchases/by-product/<uuid:product_id>/", PurchasesByProductView.as_view(), name="purchases-by-product"),
-
-    # All purchases on a specific date  →  /purchases/by-day/2024-03-15/
     path("purchases/by-day/<str:date>/", PurchasesByDayView.as_view(), name="purchases-by-day"),
-
-    # All purchases in a product category
     path("purchases/by-category/<uuid:category_id>/", PurchasesByCategoryView.as_view(), name="purchases-by-category"),
-
-    # All purchases in a specific month + year  →  /purchases/by-month/2024/3/
     path("purchases/by-month/<int:year>/<int:month>/", PurchasesByMonthYearView.as_view(), name="purchases-by-month-year"),
-
-    # All purchases in a month number across ALL years  →  /purchases/by-month/3/
     path("purchases/by-month/<int:month>/", PurchasesByMonthAllYearsView.as_view(), name="purchases-by-month-all-years"),
-
-    # All purchases by a client
     path("purchases/by-client/<uuid:client_id>/", PurchasesByClientView.as_view(), name="purchases-by-client"),
-
-    # All purchases over a price  →  /purchases/over-price/?price=500&currency=PLN
     path("purchases/over-price/", PurchasesOverPriceView.as_view(), name="purchases-over-price"),
-
-    # All purchases by client's country  →  /purchases/by-country/Poland/
     path("purchases/by-country/<str:country>/", PurchasesByClientCountryView.as_view(), name="purchases-by-country"),
-    
+
+    # ── Pracownicy ────────────────────────────────────────────────────────────
     path("pracownicy/", PracownikListCreateView.as_view(), name="pracownik-list"),
     path("pracownicy/stats/", PracownikStatsView.as_view(), name="pracownik-stats"),
     path("pracownicy/<uuid:pk>/", PracownikDetailView.as_view(), name="pracownik-detail"),
 
-    # ── Kontakty awaryjne (nested under pracownik) ────────────────────────────
+    # ── Kontakty awaryjne (nested) ────────────────────────────────────────────
     path("pracownicy/<uuid:pracownik_pk>/kontakty/", KontaktAwaryjnyListCreateView.as_view(), name="kontakt-awaryjny-list"),
     path("pracownicy/<uuid:pracownik_pk>/kontakty/<uuid:pk>/", KontaktAwaryjnyDetailView.as_view(), name="kontakt-awaryjny-detail"),
 ]
