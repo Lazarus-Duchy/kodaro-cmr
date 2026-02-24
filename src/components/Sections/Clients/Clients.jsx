@@ -188,7 +188,12 @@ const Clients = () => {
           get('/survivors/'),
           get('/survivors/stats/'),
         ]);
-        setTableData(survivors);
+        setTableData(survivors.map((s) => ({
+          ...s,
+          created_at: s.created_at
+            ? new Date(s.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '—',
+        })));
         applyStats(statsData);
       } catch (error) {
         console.error('Failed to fetch survivors:', error);
@@ -208,9 +213,12 @@ const Clients = () => {
 
   // ── CRUD handlers ────────────────────────────────────────────────────────
 
+  const formatDate = (raw) =>
+    raw ? new Date(raw).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
   const handleAdd = async (values) => {
     const newSurvivor = await post('/survivors/', values);
-    setTableData((prev) => [newSurvivor, ...prev]);
+    setTableData((prev) => [{ ...newSurvivor, created_at: formatDate(newSurvivor.created_at) }, ...prev]);
     await refreshStats();
   };
 
