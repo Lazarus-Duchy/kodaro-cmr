@@ -26,8 +26,7 @@ const tableValidation = {
 const Clients = () => {
   const [tableData, setTableData] = useState([]);
   const [stats, setStats] = useState([
-    { title: 'Total Clients',  value: '—', icon: <IconUser size={24} /> },
-    { title: 'Active Clients', value: '—', desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
+    { title: 'Total Survivors',  value: '—', icon: <IconUser size={24} /> },
   ]);
 
   const newRowForm = useForm({mode: 'uncontrolled', initialValues: {}, validate: tableValidation});
@@ -63,11 +62,10 @@ const Clients = () => {
         // Update summary cards from real data
         const activeCount = data.filter((c) => c.status === "active").length;
         setStats([
-          { title: 'Total Clients',  value: String(data.length),  icon: <IconUser size={24} /> },
-          { title: 'Active Clients', value: String(activeCount), desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
+          { title: 'Total Survivors',  value: String(data.length),  icon: <IconUser size={24} /> },
         ]);
       } catch (error) {
-        console.error("Failed to fetch clients:", error);
+        console.error("Failed to fetch Survivors", error);
       }
     };
     fetchClients();
@@ -101,8 +99,8 @@ const Clients = () => {
       const next = prev.filter((row) => row.id !== id);
       const activeCount = next.filter((c) => c.status === "active").length;
       setStats([
-        { title: 'Total Clients',  value: String(next.length),  icon: <IconUser size={24} /> },
-        { title: 'Active Clients', value: String(activeCount), desc: "Right now", icon: <IconDeviceDesktop size={24} /> },
+        { title: 'Total Survivors',  value: String(next.length),  icon: <IconUser size={24} /> },
+        
       ]);
       return next;
     });
@@ -115,8 +113,8 @@ const Clients = () => {
   return (
     <Stack gap="lg">
       <Box>
-        <Title order={1}>Clients</Title>
-        <Text c="dimmed" size="sm">Informations about your clients</Text>
+        <Title order={1}>Survivors</Title>
+        <Text c="dimmed" size="sm">Informations about rescue survivors</Text>
       </Box>
 
       <Grid>
@@ -134,7 +132,7 @@ const Clients = () => {
       </Grid>
 
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="md">All clients</Text>
+        <Text fw={700} mb="md">All survivors</Text>
         <TableSort
           structure={tableStructure}
           data={tableData}
@@ -148,11 +146,11 @@ const Clients = () => {
           editRowForm={editRowForm}
           newRowFields={newRowFields}
           editRowFields={editRowFields}
-          addRowsTitle="Add new client"
-          editRowTitle="Edit client"
-          deleteRowTitle="Delete client"
-          addRowBtnInfo="Add new client"
-          deleteRowInfo="Are you sure you want to delete this client? This action is destructive, this data will be gone forever!"
+          addRowsTitle="Add new survivor"
+          editRowTitle="Edit survivor"
+          deleteRowTitle="Delete survivor"
+          addRowBtnInfo="Add new survivor"
+          deleteRowInfo="Are you sure you want to delete this survivor? This action is destructive, this data will be gone forever!"
         />
       </Paper>
     </Stack>

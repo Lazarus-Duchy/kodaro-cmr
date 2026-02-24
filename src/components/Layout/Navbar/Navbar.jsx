@@ -15,7 +15,7 @@ const navlinks = [
     header: 'People', 
     links: [
       { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} /> },
-      { href: 'clients',  label: 'Clients',                                     icon: <IconUsers size={20} stroke={1.5} />        },
+      { href: 'clients',  label: 'Survivors',                                     icon: <IconUsers size={20} stroke={1.5} />        },
     ]
   },
   {

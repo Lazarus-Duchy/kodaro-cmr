@@ -29,12 +29,12 @@ const Home = () => {
               display: 'inline-block'
             }}
           >
-            Manage Your Business with ClientFlow
+            Manage Your Teams with SummitFlow
           </Title>
           
           <Text size="lg" c="dimmed" maw={600} mt="md">
-            The all-in-one CRM platform designed to streamline your client relationships, 
-            track sales, and boost your productivity with ease.
+            The all-in-one command platform designed to coordinate rescue teams, track missions in real time, 
+            and streamline mountain operations—so you can save lives efficiently, even in the harshest conditions.
           </Text>
 
           <Group mt="xl">
@@ -63,7 +63,7 @@ const Home = () => {
             <FeatureCard 
               icon={<IconShieldCheck size={24} />} 
               title="Secure Data" 
-              description="Enterprise-grade security to keep your client information safe."
+              description="Enterprise-grade security to keep your informations safe."
             />
           </Grid.Col>
         </Grid>

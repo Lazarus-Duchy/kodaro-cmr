@@ -30,7 +30,7 @@ const Header = ({ opened, toggle }) => {
             {isLoggedIn && (
               <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             )}
-            <Text fw={700} size="lg" c="clientFlow.4">ClientFlow</Text>
+            <Text fw={700} size="lg" c="clientFlow.4">SummitFlow</Text>
           </Group>
 
           {/* Right side: auth buttons or user menu */}
@@ -54,18 +54,8 @@ const Header = ({ opened, toggle }) => {
                       <Text size="xs" fw={600}>{user?.name}</Text>
                       <Text size="xs" c="dimmed">{user?.email}</Text>
                     </Menu.Label>
-                    <Menu.Divider />
-                    <Menu.Item leftSection={<IconUser style={{ width: rem(14) }} />}>
-                      Profil
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                      color="red"
-                      leftSection={<IconLogout style={{ width: rem(14) }} />}
-                      onClick={logout}
-                    >
-                      Wyloguj się
-                    </Menu.Item>
+                    
+                   
                   </Menu.Dropdown>
                 </Menu>
 
@@ -77,7 +67,7 @@ const Header = ({ opened, toggle }) => {
                   leftSection={<IconLogout size={16} />}
                   onClick={logout}
                 >
-                  Wyloguj
+                  Logout
                 </Button>
               </>
             ) : (

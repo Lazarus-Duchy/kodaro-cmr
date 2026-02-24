@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import RouterSwitcher from './components/RouterSwitcher/RouterSwitcher';
 import Header from './components/Layout/Header/Header.jsx';
 import Navbar from './components/Layout/Navbar/Navbar.jsx';
-import Footer from './components/Layout/Footer/footer.jsx';
+import Footer from './components/Layout/Footer/Footer.jsx';
 import LoadingScreen from './components/Modals/LoadingScreen/loadingScreen.jsx';
 import PathBreadcrumbs from './components/Features/PathBreadcrumbs/PathBreadcrumbs.jsx';
 import { useAuth } from './Context/AuthContext.jsx';
