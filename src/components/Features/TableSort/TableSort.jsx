@@ -19,6 +19,29 @@ const Th = ({ children, reversed, sorted, onSort }) => {
   );
 };
 
+// Extracts a human-readable message from any DRF error response.
+// DRF can return:
+//   { detail: "..." }                   — permission / auth errors
+//   { field: ["msg", ...], ... }        — field-level validation errors
+//   { non_field_errors: ["msg", ...] }  — cross-field validation errors
+const extractErrorMessage = (err) => {
+  const data = err?.response?.data;
+  if (!data) return null;
+  if (typeof data === 'string') return data;
+  if (data.detail) return data.detail;
+
+  const messages = [];
+  for (const [key, value] of Object.entries(data)) {
+    const msgs = Array.isArray(value) ? value : [String(value)];
+    if (key === 'non_field_errors') {
+      messages.push(...msgs);
+    } else {
+      messages.push(`${key}: ${msgs.join(', ')}`);
+    }
+  }
+  return messages.length ? messages.join(' | ') : null;
+};
+
 function filterData(data, search) {
   const query = search.toLowerCase().trim();
   if (!data.length) return [];
@@ -83,7 +106,7 @@ export function TableSort({
       newRowClose();
       newRowForm.reset();
     } catch (err) {
-      setError(err?.response?.data?.detail ?? "Failed to add row. Please try again.");
+      setError(extractErrorMessage(err) ?? "Failed to add row. Please try again.");
     } finally {
       newRowLoadingEnd();
     }
@@ -96,7 +119,7 @@ export function TableSort({
       await onEdit?.(selectedRow.id, values);
       editRowClose();
     } catch (err) {
-      setError(err?.response?.data?.detail ?? "Failed to update row. Please try again.");
+      setError(extractErrorMessage(err) ?? "Failed to update row. Please try again.");
     } finally {
       editRowLoadingEnd();
     }
@@ -117,7 +140,7 @@ export function TableSort({
       await onDelete?.(selectedRow.id);
       deleteRowClose();
     } catch (err) {
-      setError(err?.response?.data?.detail ?? "Failed to delete row. Please try again.");
+      setError(extractErrorMessage(err) ?? "Failed to delete row. Please try again.");
     } finally {
       deleteRowLoadingEnd();
     }
