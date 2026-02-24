@@ -24,7 +24,7 @@ const LoadingScreen = () => {
           }}
         />
         <Text size="xl" fw={800} style={{ letterSpacing: -1 }}>
-          Client<span style={{ color: theme.colors.yellow[6] }}>Flow</span>
+          Summit<span style={{ color: theme.colors.yellow[6] }}>Flow</span>
         </Text>
         <Box style={{ width: 140, height: 3, backgroundColor: isDark ? theme.colors.dark[4] : theme.colors.gray[1], borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
           <Box style={{ position: 'absolute', width: '60%', height: '100%', background: `linear-gradient(90deg, ${theme.colors.blue[6]}, ${theme.colors.yellow[6]})`, animation: 'progress 1.5s infinite ease-in-out' }} />

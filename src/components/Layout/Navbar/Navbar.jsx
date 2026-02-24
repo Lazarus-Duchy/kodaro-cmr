@@ -9,7 +9,8 @@ import {
   IconMoonStars, 
   IconShoppingCart,
   IconAxe,
-  IconPhoneCall
+  IconPhoneCall,
+  IconHeadset
 } from '@tabler/icons-react';
 
 const navlinks = [
@@ -21,19 +22,14 @@ const navlinks = [
     ]
   },
   {
-    header: 'Marketing',
+    header: 'Rescue Operations',
     links: [
-      { href: 'campaigns', label: 'Campaigns', description: 'Manage your rescue campaigns', icon: <IconSpeakerphone size={20} stroke={1.5} /> },
-    ]
-  },
-  {
-    header: 'Stats',
-    links: [
+      { href: 'campaigns', label: 'Campaigns', description: 'Manage your rescue campaigns', icon: <IconHeadset size={20} stroke={1.5} /> },
       { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} />   },
-      { href: 'sales',   label: 'Equipment Usage',   icon: <IconAxe size={20} stroke={1.5} /> },
+      { href: 'equipment',   label: 'Equipment',   icon: <IconAxe size={20} stroke={1.5} /> },
       { href: 'emergency-calls',   label: 'Emergency Calls',   icon: <IconPhoneCall size={20} stroke={1.5} /> },
     ]
-  }
+  },
 ];
 
 const maxStackSize = 9;
