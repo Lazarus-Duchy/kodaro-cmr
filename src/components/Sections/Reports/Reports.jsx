@@ -4,6 +4,8 @@ import {
 } from '@mantine/core';
 import {
   IconCurrencyDollar, IconUsers, IconShoppingCart,
+  IconUserHeart,
+  IconActivity,
 } from '@tabler/icons-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -78,19 +80,14 @@ const Reports = () => {
 
   const stats = [
     {
-      title: 'Total Revenue',
-      value: `$${summaryStats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      icon: <IconCurrencyDollar size={24} />,
+      title: 'Actions',
+      value: String(summaryStats.totalRevenue),
+      icon: <IconActivity size={24} />,
     },
     {
-      title: 'Total Purchases',
+      title: 'Survivors',
       value: String(summaryStats.totalPurchases),
-      icon: <IconShoppingCart size={24} />,
-    },
-    {
-      title: 'Unique Clients',
-      value: String(summaryStats.uniqueClients),
-      icon: <IconUsers size={24} />,
+      icon: <IconUserHeart size={24} />,
     },
   ];
 
@@ -106,19 +103,19 @@ const Reports = () => {
     <Stack gap="lg">
       <Box>
         <Title order={1}>Analytics Reports</Title>
-        <Text c="dimmed" size="sm">Monthly revenue overview for {new Date().getFullYear()}</Text>
+        <Text c="dimmed" size="sm">Monthly rescure actions overview for {new Date().getFullYear()}</Text>
       </Box>
 
       <Grid>
         {stats.map((stat, index) => (
           <Grid.Col key={index} span={{ base: 12, sm: 4 }}>
-            <SummaryCard title={stat.title} icon={stat.icon} value={stat.value} />
+            <SummaryCard title={stat.title} icon={stat.icon} value={stat.value} desc={stat.desc} />
           </Grid.Col>
         ))}
       </Grid>
 
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="xl">Monthly Revenue — {new Date().getFullYear()}</Text>
+        <Text fw={700} mb="xl">Monthly Actions — {new Date().getFullYear()}</Text>
         <Box h={350}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
@@ -142,7 +139,7 @@ const Reports = () => {
                 tickFormatter={(v) => `$${v.toLocaleString()}`}
               />
               <Tooltip
-                formatter={(value) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                formatter={(value) => [String(value), 'Actions']}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
               />
               <Area
@@ -169,7 +166,7 @@ const Reports = () => {
               <Paper withBorder p="sm" radius="md" ta="center">
                 <Text size="xs" c="dimmed" fw={600}>{month.name}</Text>
                 <Text fw={700} size="sm" mt={4}>
-                  ${month.revenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  {String(month.revenue)}
                 </Text>
                 <Text size="xs" c="dimmed">{month.count} orders</Text>
               </Paper>

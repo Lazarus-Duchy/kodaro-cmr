@@ -16,33 +16,32 @@ const tableStructure = [
   { name: 'id',         label: 'ID',         default: '' },
   { name: 'first_name', label: 'Name',       default: '' },
   { name: 'last_name',  label: 'Surname',    default: '' },
-  { name: 'stanowisko', label: 'Position',   default: '' },
+  { name: 'team',       label: 'Team',       default: '' },
 ];
 
-const DZIAL_OPTIONS = [
-  { value: 'it',        label: 'IT' },
-  { value: 'hr',        label: 'HR' },
-  { value: 'finanse',   label: 'Finanse' },
-  { value: 'sprzedaz',  label: 'Sprzedaż' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'operacje',  label: 'Operacje' },
-  { value: 'zarzad',    label: 'Zarząd' },
-  { value: 'logistyka', label: 'Logistyka' },
-  { value: 'inny',      label: 'Inny' },
+const TEAM_OPTIONS = [
+  { value: 'team1',     label: 'Team n1' },
+  { value: 'team2',     label: 'Team n2' },
 ];
+
+const DEPARTMENT_OPTIONS = [
+  { value: 'rescurer',   label: 'Rescurer' },
+  { value: 'other',      label: 'Other' },
+]
 
 const STATUS_OPTIONS = [
-  { value: 'aktywny',     label: 'Aktywny' },
-  { value: 'nieaktywny',  label: 'Nieaktywny' },
-  { value: 'urlop',       label: 'Na urlopie' },
-  { value: 'zwolniony',   label: 'Zwolniony' },
-  { value: 'staz',        label: 'Staż' },
+  { value: 'online',     label: 'Online' },
+  { value: 'offline',    label: 'Offline' },
+  { value: 'onleave',    label: 'On leave' },
+  { value: 'fired',      label: 'Fired' },
+  { value: 'practice',   label: 'Practice' },
 ];
 
 const tableValidation = {
   first_name: (v) => (!v ? 'Name is required' : null),
   last_name:  (v) => (!v ? 'Surname is required' : null),
   email:      (v) => (!v ? 'Email is required' : null),
+  team:       (v) => (!v ? 'Team is required' : null),
 };
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -51,8 +50,8 @@ const Contacts = () => {
   const [tableData, setTableData]   = useState([]);
   const [stats, setStats]           = useState([
     { title: 'Total Workers',   value: '—', icon: <IconAddressBook size={24} /> },
-    { title: 'Active Workers',  value: '—', desc: 'Status: aktywny', icon: <IconUsers size={24} /> },
-    { title: 'On Leave',        value: '—', desc: 'Status: urlop',   icon: <IconDeviceDesktop size={24} /> },
+    { title: 'Active Workers',  value: '—', desc: 'Status: online', icon: <IconUsers size={24} /> },
+    { title: 'On Leave',        value: '—', desc: 'Status: on leave',   icon: <IconDeviceDesktop size={24} /> },
   ]);
 
   const newRowForm  = useForm({ mode: 'uncontrolled', initialValues: {}, validate: tableValidation });
@@ -79,10 +78,12 @@ const Contacts = () => {
       withAsterisk
       {...form.getInputProps('email')}
     />,
-    <TextInput
-      key={form.key('stanowisko')}
-      label="Position"
-      {...form.getInputProps('stanowisko')}
+    <Select
+      key={form.key('team')}
+      label="Team"
+      data={TEAM_OPTIONS}
+      {...form.getInputProps('team')}
+      withAsterisk
     />,
     <TextInput
       key={form.key('phone')}
@@ -96,10 +97,10 @@ const Contacts = () => {
       {...form.getInputProps('status')}
     />,
     <Select
-      key={form.key('dzial')}
+      key={form.key('department')}
       label="Department"
-      data={DZIAL_OPTIONS}
-      {...form.getInputProps('dzial')}
+      data={DEPARTMENT_OPTIONS}
+      {...form.getInputProps('department')}
     />,
   ];
 
@@ -109,12 +110,12 @@ const Contacts = () => {
   // ── Helper — update summary cards ─────────────────────────────────────────
 
   const updateStats = (data) => {
-    const active  = data.filter((w) => w.status === 'aktywny').length;
-    const onLeave = data.filter((w) => w.status === 'urlop').length;
+    const active  = data.filter((w) => w.status === 'online').length;
+    const onLeave = data.filter((w) => w.status === 'onleave').length;
     setStats([
       { title: 'Total Workers',  value: String(data.length), icon: <IconAddressBook size={24} /> },
-      { title: 'Active Workers', value: String(active),       desc: 'Status: aktywny', icon: <IconUsers size={24} /> },
-      { title: 'On Leave',       value: String(onLeave),      desc: 'Status: urlop',   icon: <IconDeviceDesktop size={24} /> },
+      { title: 'Active Workers', value: String(active),       desc: 'Status: online', icon: <IconUsers size={24} /> },
+      { title: 'On Leave',       value: String(onLeave),      desc: 'Status: on leave',   icon: <IconDeviceDesktop size={24} /> },
     ]);
   };
 

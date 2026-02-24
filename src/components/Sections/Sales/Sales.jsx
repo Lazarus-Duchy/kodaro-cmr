@@ -1,5 +1,5 @@
 import { Box, Checkbox, Flex, Grid, Paper, ScrollArea, Stack, Text, TextInput, Title, NumberInput, Loader, Center, Select } from "@mantine/core";
-import { IconShoppingBag, IconCurrencyDollar } from "@tabler/icons-react";
+import { IconShoppingBag, IconCurrencyDollar, IconTool, IconTools, IconAxe, IconBolt } from "@tabler/icons-react";
 import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
@@ -65,22 +65,18 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 
 // ─── Table structure ──────────────────────────────────────────────────────────
 
-const purchaseTableStructure = [
-  { name: "product_name", label: "Product",    type: "string", isEditable: false, required: false },
-  { name: "client_name",  label: "Client",     type: "string", isEditable: false, required: false },
-  { name: "quantity",     label: "Qty",        type: "number", isEditable: true,  required: true, default: 1 },
-  { name: "unit_price",   label: "Unit Price", type: "number", isEditable: true,  required: true, default: 0 },
-  { name: "currency",     label: "Currency",   type: "string", isEditable: true,  required: true },
-  { name: "date",         label: "Date",       type: "string", isEditable: true,  required: true },
+const equipmentTableStructure = [
+  { name: "name",         label: "Name"       },
+  { name: "category",     label: "Category"   },
+  { name: "quantity",     label: "Qty"        },
+  { name: "unit_price",   label: "Unit Price" },
 ];
 
 const purchaseValidation = {
-  product: (v) => v ? null : "Product is required",
-  client:  (v) => v ? null : "Client is required",
+  name: (v) => v ? null : "Name is required",
+  category:  (v) => v ? null : "Category is required",
   quantity:   (v) => (v > 0 ? null : "Must be > 0"),
   unit_price: (v) => (v >= 0 ? null : "Must be ≥ 0"),
-  currency:   (v) => v ? null : "Currency is required",
-  date:       (v) => v ? null : "Date is required",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -89,9 +85,8 @@ const Sales = () => {
   const [loading, setLoading] = useState(true);
 
   // Purchases table state
-  const [purchases, setPurchases] = useState([]);
-  const [productOptions, setProductOptions] = useState([]);
-  const [clientOptions, setClientOptions]   = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [equipmentCategories, setEquipmentCategories] = useState([]);
 
   // Chart state
   const [chartData, setChartData] = useState([]);
@@ -99,8 +94,8 @@ const Sales = () => {
   const [productsDisplay, productsDisplayHandlers] = useListState([]);
 
   const [stats, setStats] = useState([
-    { title: "Total Sales Revenue", value: "—", icon: <IconCurrencyDollar size={24} /> },
-    { title: "Total Purchases",     value: "—", icon: <IconShoppingBag size={24} /> },
+    { title: "Total Equipment", value: "—", icon: <IconAxe size={24} /> },
+    { title: "Total Equipment Usage",     value: "—", icon: <IconBolt size={24} /> },
   ]);
 
   // ── Forms ──────────────────────────────────────────────────────────────────
@@ -109,23 +104,20 @@ const Sales = () => {
   const editRowForm = useForm({ mode: "uncontrolled", validate: purchaseValidation });
 
   const purchaseFields = (form) => [
-    <Select
-      key={form.key("product")}
-      label="Product"
-      data={productOptions}
+    <TextInput 
+      key={form.key("name")}
+      label="Name"
       withAsterisk
-      required
-      searchable
-      {...form.getInputProps("product")}
+      {...form.getInputProps("name")}
     />,
     <Select
-      key={form.key("client")}
-      label="Client"
-      data={clientOptions}
+      key={form.key("category")}
+      label="Category"
+      data={equipmentCategories}
       withAsterisk
       required
       searchable
-      {...form.getInputProps("client")}
+      {...form.getInputProps("category")}
     />,
     <NumberInput
       key={form.key("quantity")}
@@ -143,22 +135,6 @@ const Sales = () => {
       withAsterisk
       required
       {...form.getInputProps("unit_price")}
-    />,
-    <Select
-      key={form.key("currency")}
-      label="Currency"
-      data={CURRENCIES}
-      withAsterisk
-      required
-      {...form.getInputProps("currency")}
-    />,
-    <DateInput
-      key={form.key("date")}
-      label="Date"
-      withAsterisk
-      required
-      valueFormat="YYYY-MM-DD"
-      {...form.getInputProps("date")}
     />,
   ];
 
@@ -185,7 +161,7 @@ const Sales = () => {
         setClientOptions(clientList.map((c)   => ({ value: c.id, label: c.name })));
 
         // Purchases table rows — flatten for display
-        setPurchases(purchaseList.map((p) => ({
+        setEquipment(purchaseList.map((p) => ({
           id:           p.id,
           product_name: p.product_name ?? p.product ?? "—",
           client_name:  p.client_name  ?? p.client  ?? "—",
@@ -209,8 +185,8 @@ const Sales = () => {
           (sum, p) => sum + parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1), 0
         );
         setStats([
-          { title: "Total Sales Revenue", value: `$${totalRevenue.toLocaleString("en-US", { maximumFractionDigits: 0 })}`, icon: <IconCurrencyDollar size={24} /> },
-          { title: "Total Purchases",     value: String(purchaseList.length), icon: <IconShoppingBag size={24} /> },
+          { title: "Total Equipment", value: String(totalRevenue), icon: <IconAxe size={24} /> },
+          { title: "Total Equipment Usage",     value: String(purchaseList.length), icon: <IconBolt size={24} /> },
         ]);
       } catch (err) {
         console.error("Failed to load sales data:", err);
@@ -232,7 +208,7 @@ const Sales = () => {
         : values.date,
     };
     const created = await post("/purchases/", payload);
-    setPurchases((prev) => [{
+    setEquipment((prev) => [{
       id:           created.id,
       product_name: created.product_name ?? created.product ?? "—",
       client_name:  created.client_name  ?? created.client  ?? "—",
@@ -253,7 +229,7 @@ const Sales = () => {
         : values.date,
     };
     const updated = await patch(`/purchases/${id}/`, payload);
-    setPurchases((prev) => prev.map((row) => row.id === id ? {
+    setEquipment((prev) => prev.map((row) => row.id === id ? {
       id:           updated.id,
       product_name: updated.product_name ?? updated.product ?? "—",
       client_name:  updated.client_name  ?? updated.client  ?? "—",
@@ -268,7 +244,7 @@ const Sales = () => {
 
   const handleDelete = async (id) => {
     await del(`/purchases/${id}/`);
-    setPurchases((prev) => prev.filter((row) => row.id !== id));
+    setEquipment((prev) => prev.filter((row) => row.id !== id));
   };
 
   // ── Checkbox state ─────────────────────────────────────────────────────────
@@ -283,8 +259,8 @@ const Sales = () => {
   return (
     <Stack gap="lg">
       <Box>
-        <Title order={1}>Sales</Title>
-        <Text c="dimmed" size="sm">Everything about your sales and products</Text>
+        <Title order={1}>Equipment Usage</Title>
+        <Text c="dimmed" size="sm">Everything about usage of your equipment</Text>
       </Box>
 
       {/* ── Summary cards + Pie ── */}
@@ -296,7 +272,7 @@ const Sales = () => {
         ))}
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Paper withBorder p="md" radius="md" h="100%">
-            <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb="xs">Revenue per Product</Text>
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb="xs">Usage per Equipment</Text>
             <ResponsiveContainer width="100%" aspect={1.4}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" labelLine={false} label={renderCustomizedLabel}>
@@ -305,7 +281,7 @@ const Sales = () => {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(v, name) => [`$${Number(v).toLocaleString()}`, name]}
+                  formatter={(v, name) => [Number(v).toLocaleString(), name]}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                 />
                 <Legend />
@@ -317,7 +293,7 @@ const Sales = () => {
 
       {/* ── Line chart ── */}
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="xl">Revenue per Product — {CURRENT_YEAR}</Text>
+        <Text fw={700} mb="xl">Usage per Equipment — {CURRENT_YEAR}</Text>
         <Flex wrap="wrap" gap="md">
           <Box h={300} style={{ flex: "1 1 70%" }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -326,7 +302,7 @@ const Sales = () => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
                 <Tooltip
-                  formatter={(v, name) => [`$${Number(v).toLocaleString("en-US", { maximumFractionDigits: 0 })}`, name]}
+                  formatter={(v, name) => [Number(v).toLocaleString(), name]}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                 />
                 {productsDisplay.map((product, i) =>
@@ -373,10 +349,10 @@ const Sales = () => {
 
       {/* ── Purchases table ── */}
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="md">Purchases</Text>
+        <Text fw={700} mb="md">Equipment</Text>
         <TableSort
-          structure={purchaseTableStructure}
-          data={purchases}
+          structure={equipmentTableStructure}
+          data={equipment}
           onAdd={handleAdd}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -385,11 +361,11 @@ const Sales = () => {
           newRowFields={newRowFields}
           editRowFields={editRowFields}
           canAddRows canEditRows canDeleteRows
-          addRowsTitle="Add new purchase"
-          editRowTitle="Edit purchase"
-          deleteRowTitle="Delete purchase"
-          addRowBtnInfo="Add purchase"
-          deleteRowInfo="Are you sure you want to delete this purchase? This action cannot be undone."
+          addRowsTitle="Add new equipment"
+          editRowTitle="Edit equipment"
+          deleteRowTitle="Delete equipment"
+          addRowBtnInfo="Add equipment"
+          deleteRowInfo="Are you sure you want to delete this equipment? This action cannot be undone."
         />
       </Paper>
     </Stack>
