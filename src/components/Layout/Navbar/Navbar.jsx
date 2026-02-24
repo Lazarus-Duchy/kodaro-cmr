@@ -22,14 +22,19 @@ const navlinks = [
     ]
   },
   {
-    header: 'Rescue Operations',
+    header: 'Marketing',
     links: [
-      { href: 'campaigns', label: 'Campaigns', description: 'Manage your rescue campaigns', icon: <IconHeadset size={20} stroke={1.5} /> },
-      { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} />   },
+      { href: 'campaigns', label: 'Campaigns', description: 'Manage your marketing campaigns', icon: <IconSpeakerphone size={20} stroke={1.5} /> },
+    ]
+  },
+  {
+    header: 'Operations',
+    links: [
+      { href: 'reports', label: 'Reports', description: 'Manage your rescue operations', icon: <IconHeadset size={20} stroke={1.5} />   },
       { href: 'equipment',   label: 'Equipment',   icon: <IconAxe size={20} stroke={1.5} /> },
       { href: 'emergency-calls',   label: 'Emergency Calls',   icon: <IconPhoneCall size={20} stroke={1.5} /> },
     ]
-  },
+  }
 ];
 
 const maxStackSize = 9;
