@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "@mantine/form";
 import { get, post, patch, del } from "../../../api";
 
@@ -108,7 +108,15 @@ const Sales = () => {
   const newRowForm  = useForm({ mode: "uncontrolled", initialValues, validate: equipmentValidation });
   const editRowForm = useForm({ mode: "uncontrolled", initialValues, validate: equipmentValidation });
 
-  const buildFields = (form) => [
+  // categoryOptions is passed explicitly so the Select always has the latest
+  // data regardless of when the async fetch resolves.
+  // useMemo is intentionally NOT used here: newRowForm is a stable reference
+  // so the memo would only re-run on categoryOptions changes — but because
+  // buildFields isn't in the dep array the closure would still be stale on
+  // the first render (before the fetch), leaving the Select with data={[]}.
+  // Mantine uncontrolled mode stores state in the form object, so rebuilding
+  // the JSX on every render is safe.
+  const buildFields = (form, catOptions) => [
     <TextInput
       key={form.key("name")}
       label="Name"
@@ -136,7 +144,7 @@ const Sales = () => {
     <Select
       key={form.key("category")}
       label="Category"
-      data={categoryOptions}
+      data={catOptions}
       searchable
       clearable
       {...form.getInputProps("category")}
@@ -166,10 +174,8 @@ const Sales = () => {
     />,
   ];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const newRowFields  = useMemo(() => buildFields(newRowForm),  [newRowForm, categoryOptions]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const editRowFields = useMemo(() => buildFields(editRowForm), [editRowForm, categoryOptions]);
+  const newRowFields  = buildFields(newRowForm,  categoryOptions);
+  const editRowFields = buildFields(editRowForm, categoryOptions);
 
   // ── Stats helper ────────────────────────────────────────────────────────────
 
