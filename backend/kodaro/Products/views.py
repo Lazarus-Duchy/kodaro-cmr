@@ -7,12 +7,12 @@ from .models import Category, Product
 from .serializers import CategorySerializer, ProductListSerializer, ProductSerializer
 
 
-# ── Categories ────────────────────────────────────────────────────────────────
+# ── Equipment Categories ───────────────────────────────────────────────────────
 
 class CategoryListCreateView(generics.ListCreateAPIView):
     """
-    GET  /products/categories/   → List all categories.
-    POST /products/categories/   → Create a category (admin only).
+    GET  /equipment/categories/   → List all equipment categories.
+    POST /equipment/categories/   → Create a category (admin only).
     """
     serializer_class = CategorySerializer
     queryset = Category.objects.prefetch_related("products")
@@ -25,9 +25,9 @@ class CategoryListCreateView(generics.ListCreateAPIView):
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /products/categories/<id>/   → Retrieve a category.
-    PATCH  /products/categories/<id>/   → Update a category (admin only).
-    DELETE /products/categories/<id>/   → Delete a category (admin only).
+    GET    /equipment/categories/<id>/   → Retrieve a category.
+    PATCH  /equipment/categories/<id>/   → Update a category (admin only).
+    DELETE /equipment/categories/<id>/   → Delete a category (admin only).
     """
     serializer_class = CategorySerializer
     queryset = Category.objects.prefetch_related("products")
@@ -38,12 +38,12 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         return [IsAuthenticated()]
 
 
-# ── Products ──────────────────────────────────────────────────────────────────
+# ── Equipment Items ────────────────────────────────────────────────────────────
 
 class ProductListCreateView(generics.ListCreateAPIView):
     """
-    GET  /products/          → List all products (with search, filter & ordering).
-    POST /products/          → Create a new product.
+    GET  /equipment/          → List all equipment items (with search, filter & ordering).
+    POST /equipment/          → Register a new equipment item.
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -54,11 +54,11 @@ class ProductListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         qs = Product.objects.select_related("category", "created_by")
 
-        status_param = self.request.query_params.get("status")
+        status_param   = self.request.query_params.get("status")
         category_param = self.request.query_params.get("category")
         currency_param = self.request.query_params.get("currency")
-        min_price = self.request.query_params.get("min_price")
-        max_price = self.request.query_params.get("max_price")
+        min_price      = self.request.query_params.get("min_price")
+        max_price      = self.request.query_params.get("max_price")
 
         if status_param:
             qs = qs.filter(status=status_param)
@@ -81,9 +81,9 @@ class ProductListCreateView(generics.ListCreateAPIView):
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /products/<id>/   → Retrieve full product detail.
-    PATCH  /products/<id>/   → Update a product.
-    DELETE /products/<id>/   → Delete a product (admin only).
+    GET    /equipment/<id>/   → Retrieve full equipment item detail.
+    PATCH  /equipment/<id>/   → Update an equipment item.
+    DELETE /equipment/<id>/   → Deregister an equipment item (admin only).
     """
     serializer_class = ProductSerializer
     queryset = Product.objects.select_related("category", "created_by")
@@ -96,7 +96,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ProductStatsView(APIView):
     """
-    GET /products/stats/   → Aggregated counts by status and category breakdown.
+    GET /equipment/stats/   → Aggregated equipment counts by status and category.
     """
     permission_classes = [IsAuthenticated]
 
@@ -112,17 +112,17 @@ class ProductStatsView(APIView):
         category_stats = (
             Product.objects
             .values("category__name")
-            .annotate(count=Count("id"), avg_price=Avg("price"))
+            .annotate(count=Count("id"), avg_value=Avg("price"))
             .order_by("-count")
         )
-        price_stats = Product.objects.aggregate(
-            avg_price=Avg("price"),
-            min_price=Min("price"),
-            max_price=Max("price"),
+        value_stats = Product.objects.aggregate(
+            avg_value=Avg("price"),
+            min_value=Min("price"),
+            max_value=Max("price"),
         )
 
         return Response({
-            "by_status": {item["status"]: item["count"] for item in status_stats},
+            "by_status":   {item["status"]: item["count"] for item in status_stats},
             "by_category": list(category_stats),
-            "price_summary": price_stats,
+            "value_summary": value_stats,
         })
