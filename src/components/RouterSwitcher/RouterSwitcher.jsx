@@ -27,7 +27,7 @@ export const RouterSwitcher = () => {
       <Route path="/reports" element={
         <ProtectedRoute><Reports /></ProtectedRoute>
       } />
-      <Route path="/sales" element={
+      <Route path="/equipment" element={
         <ProtectedRoute><Sales /></ProtectedRoute>
       } />
       <Route path="/campaigns" element={
