@@ -1,5 +1,4 @@
 from django.urls import path
-from .views import ItemsView
 from rest_framework_simplejwt.views import TokenRefreshView
 from Users.views import (
     ChangePasswordView,
@@ -17,7 +16,6 @@ from Clients.views import (
     ContactDetailView,
     ContactListCreateView,
 )
-
 from Products.views import (
     CategoryDetailView,
     CategoryListCreateView,
@@ -25,7 +23,6 @@ from Products.views import (
     ProductListCreateView,
     ProductStatsView,
 )
-
 from Purchases.views import (
     PurchaseDetailView,
     PurchaseListCreateView,
@@ -46,74 +43,61 @@ from Pracownicy.views import (
     KontaktAwaryjnyListCreateView,
     KontaktAwaryjnyDetailView,
 )
+
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────────────────
-    path("auth/register/", RegisterView.as_view(), name="auth-register"),
-    path("auth/login/", LoginView.as_view(), name="auth-login"),
-    path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("auth/register/",      RegisterView.as_view(),     name="auth-register"),
+    path("auth/login/",         LoginView.as_view(),        name="auth-login"),
+    path("auth/logout/",        LogoutView.as_view(),       name="auth-logout"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
 
     # ── Current user ──────────────────────────────────────────────────────────
-    path("users/me/", MeView.as_view(), name="user-me"),
-    path("users/me/change-password/", ChangePasswordView.as_view(), name="user-change-password"),
+    path("users/me/",                  MeView.as_view(),             name="user-me"),
+    path("users/me/change-password/",  ChangePasswordView.as_view(), name="user-change-password"),
 
     # ── Admin ─────────────────────────────────────────────────────────────────
-    path("users/", UserListView.as_view(), name="user-list"),
+    path("users/",           UserListView.as_view(),   name="user-list"),
     path("users/<uuid:pk>/", UserDetailView.as_view(), name="user-detail"),
-    
-    # ── Clients ───────────────────────────────────────────────────────────────
-    path("clients/", ClientListCreateView.as_view(), name="client-list"),
-    path("clients/stats/", ClientStatsView.as_view(), name="client-stats"),
-    path("clients/<uuid:pk>/", ClientDetailView.as_view(), name="client-detail"),
 
-    # ── Contacts (nested under a client) ─────────────────────────────────────
-    path("clients/<uuid:client_pk>/contacts/", ContactListCreateView.as_view(), name="contact-list"),
-    path("clients/<uuid:client_pk>/contacts/<uuid:pk>/", ContactDetailView.as_view(), name="contact-detail"),
+    # ── Incidents / Cases (formerly Clients) ──────────────────────────────────
+    path("incidents/",              ClientListCreateView.as_view(), name="incident-list"),
+    path("incidents/stats/",        ClientStatsView.as_view(),      name="incident-stats"),
+    path("incidents/<uuid:pk>/",    ClientDetailView.as_view(),     name="incident-detail"),
 
-     # ── Categories ────────────────────────────────────────────────────────────
-    path("products/categories/", CategoryListCreateView.as_view(), name="category-list"),
-    path("products/categories/<uuid:pk>/", CategoryDetailView.as_view(), name="category-detail"),
+    # ── Reporters / Witnesses nested under an incident ─────────────────────────
+    path("incidents/<uuid:client_pk>/contacts/",              ContactListCreateView.as_view(), name="reporter-list"),
+    path("incidents/<uuid:client_pk>/contacts/<uuid:pk>/",    ContactDetailView.as_view(),     name="reporter-detail"),
 
-    # ── Products ──────────────────────────────────────────────────────────────
-    path("products/", ProductListCreateView.as_view(), name="product-list"),
-    path("products/stats/", ProductStatsView.as_view(), name="product-stats"),
-    path("products/<uuid:pk>/", ProductDetailView.as_view(), name="product-detail"),
+    # ── Equipment Categories ───────────────────────────────────────────────────
+    path("equipment/categories/",           CategoryListCreateView.as_view(), name="category-list"),
+    path("equipment/categories/<uuid:pk>/", CategoryDetailView.as_view(),     name="category-detail"),
 
-        # ── CRUD ──────────────────────────────────────────────────────────────────
-    path("purchases/", PurchaseListCreateView.as_view(), name="purchase-list"),
-    path("purchases/stats/", PurchaseStatsView.as_view(), name="purchase-stats"),
-    path("purchases/<uuid:pk>/", PurchaseDetailView.as_view(), name="purchase-detail"),
+    # ── Equipment Items ────────────────────────────────────────────────────────
+    path("equipment/",           ProductListCreateView.as_view(), name="equipment-list"),
+    path("equipment/stats/",     ProductStatsView.as_view(),      name="equipment-stats"),
+    path("equipment/<uuid:pk>/", ProductDetailView.as_view(),     name="equipment-detail"),
 
-    # ── Filtered views ─────────────────────────────────────────────────────────
-    # All purchases of a product
-    path("purchases/by-product/<uuid:product_id>/", PurchasesByProductView.as_view(), name="purchases-by-product"),
+    # ── Missions / Operations (formerly Purchases) ─────────────────────────────
+    path("missions/",              PurchaseListCreateView.as_view(), name="mission-list"),
+    path("missions/stats/",        PurchaseStatsView.as_view(),      name="mission-stats"),
+    path("missions/<uuid:pk>/",    PurchaseDetailView.as_view(),     name="mission-detail"),
 
-    # All purchases on a specific date  →  /purchases/by-day/2024-03-15/
-    path("purchases/by-day/<str:date>/", PurchasesByDayView.as_view(), name="purchases-by-day"),
+    # Filtered mission views
+    path("missions/by-equipment/<uuid:product_id>/",        PurchasesByProductView.as_view(),        name="missions-by-equipment"),
+    path("missions/by-day/<str:date>/",                     PurchasesByDayView.as_view(),            name="missions-by-day"),
+    path("missions/by-category/<uuid:category_id>/",        PurchasesByCategoryView.as_view(),       name="missions-by-category"),
+    path("missions/by-month/<int:year>/<int:month>/",       PurchasesByMonthYearView.as_view(),      name="missions-by-month-year"),
+    path("missions/by-month/<int:month>/",                  PurchasesByMonthAllYearsView.as_view(),  name="missions-by-month-all-years"),
+    path("missions/by-incident/<uuid:client_id>/",          PurchasesByClientView.as_view(),         name="missions-by-incident"),
+    path("missions/over-price/",                            PurchasesOverPriceView.as_view(),        name="missions-over-price"),
+    path("missions/by-country/<str:country>/",              PurchasesByClientCountryView.as_view(),  name="missions-by-country"),
 
-    # All purchases in a product category
-    path("purchases/by-category/<uuid:category_id>/", PurchasesByCategoryView.as_view(), name="purchases-by-category"),
+    # ── Rescuers / Team Members (formerly Pracownicy) ──────────────────────────
+    path("rescuers/",              PracownikListCreateView.as_view(), name="rescuer-list"),
+    path("rescuers/stats/",        PracownikStatsView.as_view(),      name="rescuer-stats"),
+    path("rescuers/<uuid:pk>/",    PracownikDetailView.as_view(),     name="rescuer-detail"),
 
-    # All purchases in a specific month + year  →  /purchases/by-month/2024/3/
-    path("purchases/by-month/<int:year>/<int:month>/", PurchasesByMonthYearView.as_view(), name="purchases-by-month-year"),
-
-    # All purchases in a month number across ALL years  →  /purchases/by-month/3/
-    path("purchases/by-month/<int:month>/", PurchasesByMonthAllYearsView.as_view(), name="purchases-by-month-all-years"),
-
-    # All purchases by a client
-    path("purchases/by-client/<uuid:client_id>/", PurchasesByClientView.as_view(), name="purchases-by-client"),
-
-    # All purchases over a price  →  /purchases/over-price/?price=500&currency=PLN
-    path("purchases/over-price/", PurchasesOverPriceView.as_view(), name="purchases-over-price"),
-
-    # All purchases by client's country  →  /purchases/by-country/Poland/
-    path("purchases/by-country/<str:country>/", PurchasesByClientCountryView.as_view(), name="purchases-by-country"),
-    
-    path("pracownicy/", PracownikListCreateView.as_view(), name="pracownik-list"),
-    path("pracownicy/stats/", PracownikStatsView.as_view(), name="pracownik-stats"),
-    path("pracownicy/<uuid:pk>/", PracownikDetailView.as_view(), name="pracownik-detail"),
-
-    # ── Kontakty awaryjne (nested under pracownik) ────────────────────────────
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/", KontaktAwaryjnyListCreateView.as_view(), name="kontakt-awaryjny-list"),
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/<uuid:pk>/", KontaktAwaryjnyDetailView.as_view(), name="kontakt-awaryjny-detail"),
+    # Emergency contacts nested under a rescuer
+    path("rescuers/<uuid:pracownik_pk>/emergency-contacts/",              KontaktAwaryjnyListCreateView.as_view(), name="emergency-contact-list"),
+    path("rescuers/<uuid:pracownik_pk>/emergency-contacts/<uuid:pk>/",    KontaktAwaryjnyDetailView.as_view(),     name="emergency-contact-detail"),
 ]
