@@ -81,7 +81,7 @@ const Header = ({ opened, toggle }) => {
                   leftSection={<IconLogin size={16} />}
                   onClick={openLogin}
                 >
-                  Zaloguj się
+                  Login
                 </Button>
               </>
             )}
