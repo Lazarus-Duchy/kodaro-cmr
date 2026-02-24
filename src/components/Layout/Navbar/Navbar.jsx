@@ -7,7 +7,9 @@ import {
   IconSettings, 
   IconSun,
   IconMoonStars, 
-  IconShoppingCart
+  IconShoppingCart,
+  IconAxe,
+  IconPhoneCall
 } from '@tabler/icons-react';
 
 const navlinks = [
@@ -28,7 +30,8 @@ const navlinks = [
     header: 'Stats',
     links: [
       { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} />   },
-      { href: 'sales',   label: 'Equipment Usage',   icon: <IconShoppingCart size={20} stroke={1.5} /> },
+      { href: 'sales',   label: 'Equipment Usage',   icon: <IconAxe size={20} stroke={1.5} /> },
+      { href: 'emergency-calls',   label: 'Emergency Calls',   icon: <IconPhoneCall size={20} stroke={1.5} /> },
     ]
   }
 ];

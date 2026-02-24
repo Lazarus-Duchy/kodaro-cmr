@@ -9,6 +9,7 @@
  */
 
 import type * as campaigns from "../campaigns.js";
+import type * as emergencyCalls from "../emergencyCalls.js";
 import type * as segments from "../segments.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   campaigns: typeof campaigns;
+  emergencyCalls: typeof emergencyCalls;
   segments: typeof segments;
 }>;
 

@@ -193,15 +193,15 @@ export function TableSort({
       ))}
       {(canEditRows || canDeleteRows) && (
         <Table.Td>
-          <Group grow>
+          <Group gap="xs" wrap="nowrap">
             {canEditRows && (
-              <Button variant="light" onClick={() => handleEditOpen(row)}>
-                <IconEdit size={20} stroke={1.5} />
+              <Button variant="light" onClick={() => handleEditOpen(row)} px="sm" style={{ minWidth: 36, height: 36 }}>
+                <IconEdit size={18} stroke={1.5} />
               </Button>
             )}
             {canDeleteRows && (
-              <Button variant="outline" color="red" onClick={() => handleDeleteOpen(row)}>
-                <IconTrash size={20} stroke={1.5} />
+              <Button variant="outline" color="red" onClick={() => handleDeleteOpen(row)} px="sm" style={{ minWidth: 36, height: 36 }}>
+                <IconTrash size={18} stroke={1.5} />
               </Button>
             )}
           </Group>

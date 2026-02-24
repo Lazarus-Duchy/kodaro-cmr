@@ -7,6 +7,7 @@ import Reports from "../Sections/Reports/Reports";
 import Clients from "../Sections/Clients/Clients";
 import ProtectedRoute from "../Auth/ProtectedRoute";
 import Campaigns from "../Sections/Campaigns/Campaigns";
+import EmergencyCalls from "../Sections/EmergencyCalls/EmergencyCalls";
 
 export const RouterSwitcher = () => {
   return (
@@ -31,6 +32,9 @@ export const RouterSwitcher = () => {
       } />
       <Route path="/campaigns" element={
         <ProtectedRoute><Campaigns /></ProtectedRoute>
+      } />
+      <Route path="/emergency-calls" element={
+        <ProtectedRoute><EmergencyCalls /></ProtectedRoute>
       } />
     </Routes>
   );

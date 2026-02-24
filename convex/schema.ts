@@ -29,4 +29,37 @@ export default defineSchema({
     // Convex document IDs of the assigned segments (stored as strings)
     segment_ids: v.array(v.string()),
   }),
+
+  emergencyCalls: defineTable({
+    caller_name:  v.string(),
+    caller_phone: v.string(),
+    location:     v.string(),
+    priority:     v.union(
+      v.literal('critical'),
+      v.literal('high'),
+      v.literal('medium'),
+      v.literal('low'),
+    ),
+    call_type: v.union(
+      v.literal('medical'),
+      v.literal('fire'),
+      v.literal('rescue'),
+      v.literal('police'),
+      v.literal('natural_disaster'),
+      v.literal('hazmat'),
+      v.literal('other'),
+    ),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('dispatched'),
+      v.literal('on_scene'),
+      v.literal('resolved'),
+      v.literal('false_alarm'),
+      v.literal('cancelled'),
+    ),
+    assigned_to: v.optional(v.string()),
+    notes:       v.optional(v.string()),
+  })
+    .index('by_status',   ['status'])
+    .index('by_priority', ['priority']),
 });
