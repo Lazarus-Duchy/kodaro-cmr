@@ -14,21 +14,21 @@ const navlinks = [
   { 
     header: 'People', 
     links: [
-      { href: 'contacts', label: 'Contacts', description: 'Manage your leads', icon: <IconAddressBook size={20} stroke={1.5} /> },
+      { href: 'contacts', label: 'Contacts', description: 'Manage your teams', icon: <IconAddressBook size={20} stroke={1.5} /> },
       { href: 'clients',  label: 'Survivors',                                     icon: <IconUsers size={20} stroke={1.5} />        },
     ]
   },
   {
     header: 'Marketing',
     links: [
-      { href: 'campaigns', label: 'Campaigns', description: 'Email, SMS & Social', icon: <IconSpeakerphone size={20} stroke={1.5} /> },
+      { href: 'campaigns', label: 'Campaigns', description: 'Manage your rescue campaigns', icon: <IconSpeakerphone size={20} stroke={1.5} /> },
     ]
   },
   {
     header: 'Stats',
     links: [
       { href: 'reports', label: 'Reports', icon: <IconChartBar size={20} stroke={1.5} />   },
-      { href: 'sales',   label: 'Sales',   icon: <IconShoppingCart size={20} stroke={1.5} /> },
+      { href: 'sales',   label: 'Equipment Usage',   icon: <IconShoppingCart size={20} stroke={1.5} /> },
     ]
   }
 ];
