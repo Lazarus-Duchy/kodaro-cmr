@@ -1,104 +1,227 @@
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-from Users.views import (
-    ChangePasswordView,
-    LoginView,
-    LogoutView,
-    MeView,
-    RegisterView,
-    UserDetailView,
-    UserListView,
-)
-from Clients.views import (
-    SurvivorDetailView,
-    SurvivorListCreateView,
-    SurvivorStatsView,
-    SurvivorContactDetailView,
-    SurvivorContactListCreateView,
-)
-from Products.views import (
-    CategoryDetailView,
-    CategoryListCreateView,
-    ProductDetailView,
-    ProductListCreateView,
-    ProductStatsView,
-)
-from Purchases.views import (
-    PurchaseDetailView,
-    PurchaseListCreateView,
-    PurchasesByClientCountryView,
-    PurchasesByClientView,
-    PurchasesByCategoryView,
-    PurchasesByDayView,
-    PurchasesByMonthAllYearsView,
-    PurchasesByMonthYearView,
-    PurchasesByProductView,
-    PurchasesOverPriceView,
-    PurchaseStatsView,
-)
-from Pracownicy.views import (
-    PracownikListCreateView,
-    PracownikDetailView,
-    PracownikStatsView,
-    KontaktAwaryjnyListCreateView,
-    KontaktAwaryjnyDetailView,
-)
+from datetime import date
+
+from django.db.models import Sum, Count
+from rest_framework import generics, filters, status
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Rescue
+from .serializers import RescueListSerializer, RescueSerializer
 
 
-urlpatterns = [
-    # ── Auth ──────────────────────────────────────────────────────────────────
-    path("auth/register/",      RegisterView.as_view(),     name="auth-register"),
-    path("auth/login/",         LoginView.as_view(),        name="auth-login"),
-    path("auth/logout/",        LogoutView.as_view(),       name="auth-logout"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+def base_queryset():
+    return Rescue.objects.select_related(
+        "equipment", "equipment__category", "survivor"
+    )
 
-    # ── Current user ──────────────────────────────────────────────────────────
-    path("users/me/",                 MeView.as_view(),             name="user-me"),
-    path("users/me/change-password/", ChangePasswordView.as_view(), name="user-change-password"),
 
-    # ── Admin ─────────────────────────────────────────────────────────────────
-    path("users/",           UserListView.as_view(),   name="user-list"),
-    path("users/<uuid:pk>/", UserDetailView.as_view(), name="user-detail"),
+# ── CRUD ──────────────────────────────────────────────────────────────────────
 
-    # ── Survivors ─────────────────────────────────────────────────────────────
-    path("survivors/",           SurvivorListCreateView.as_view(), name="survivor-list"),
-    path("survivors/stats/",     SurvivorStatsView.as_view(),      name="survivor-stats"),
-    path("survivors/<uuid:pk>/", SurvivorDetailView.as_view(),     name="survivor-detail"),
+class PurchaseListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /rescues/   → List all rescue operations (search + ordering).
+    POST /rescues/   → Log a new rescue operation.
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["equipment__name", "equipment__sku", "survivor__name", "notes"]
+    ordering_fields = ["date", "equipment_cost", "created_at", "outcome"]
+    ordering = ["-date"]
 
-    # ── Survivor Contacts (nested) ────────────────────────────────────────────
-    path("survivors/<uuid:survivor_pk>/contacts/",           SurvivorContactListCreateView.as_view(), name="survivor-contact-list"),
-    path("survivors/<uuid:survivor_pk>/contacts/<uuid:pk>/", SurvivorContactDetailView.as_view(),     name="survivor-contact-detail"),
+    def get_queryset(self):
+        return base_queryset()
 
-    # ── Categories ────────────────────────────────────────────────────────────
-    path("products/categories/",           CategoryListCreateView.as_view(), name="category-list"),
-    path("products/categories/<uuid:pk>/", CategoryDetailView.as_view(),     name="category-detail"),
+    def get_serializer_class(self):
+        return RescueSerializer if self.request.method == "POST" else RescueListSerializer
 
-    # ── Products ──────────────────────────────────────────────────────────────
-    path("products/",           ProductListCreateView.as_view(), name="product-list"),
-    path("products/stats/",     ProductStatsView.as_view(),      name="product-stats"),
-    path("products/<uuid:pk>/", ProductDetailView.as_view(),     name="product-detail"),
 
-    # ── Purchases CRUD ────────────────────────────────────────────────────────
-    path("purchases/",           PurchaseListCreateView.as_view(), name="purchase-list"),
-    path("purchases/stats/",     PurchaseStatsView.as_view(),      name="purchase-stats"),
-    path("purchases/<uuid:pk>/", PurchaseDetailView.as_view(),     name="purchase-detail"),
+class PurchaseDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET    /rescues/<id>/   → Full rescue operation detail.
+    PATCH  /rescues/<id>/   → Update a rescue operation record.
+    DELETE /rescues/<id>/   → Delete a rescue record (admin only).
+    """
+    serializer_class = RescueSerializer
+    queryset = base_queryset()
 
-    # ── Purchases filtered ────────────────────────────────────────────────────
-    path("purchases/by-product/<uuid:product_id>/",        PurchasesByProductView.as_view(),       name="purchases-by-product"),
-    path("purchases/by-day/<str:date>/",                   PurchasesByDayView.as_view(),            name="purchases-by-day"),
-    path("purchases/by-category/<uuid:category_id>/",      PurchasesByCategoryView.as_view(),       name="purchases-by-category"),
-    path("purchases/by-month/<int:year>/<int:month>/",     PurchasesByMonthYearView.as_view(),      name="purchases-by-month-year"),
-    path("purchases/by-month/<int:month>/",                PurchasesByMonthAllYearsView.as_view(),  name="purchases-by-month-all-years"),
-    path("purchases/by-client/<uuid:client_id>/",          PurchasesByClientView.as_view(),         name="purchases-by-client"),
-    path("purchases/over-price/",                          PurchasesOverPriceView.as_view(),        name="purchases-over-price"),
-    path("purchases/by-country/<str:country>/",            PurchasesByClientCountryView.as_view(),  name="purchases-by-country"),
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
-    # ── Pracownicy ────────────────────────────────────────────────────────────
-    path("pracownicy/",           PracownikListCreateView.as_view(), name="pracownik-list"),
-    path("pracownicy/stats/",     PracownikStatsView.as_view(),      name="pracownik-stats"),
-    path("pracownicy/<uuid:pk>/", PracownikDetailView.as_view(),     name="pracownik-detail"),
 
-    # ── Kontakty awaryjne (nested) ────────────────────────────────────────────
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/",           KontaktAwaryjnyListCreateView.as_view(), name="kontakt-awaryjny-list"),
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/<uuid:pk>/", KontaktAwaryjnyDetailView.as_view(),     name="kontakt-awaryjny-detail"),
-]
+# ── Filtered views ─────────────────────────────────────────────────────────────
+
+class PurchasesByProductView(generics.ListAPIView):
+    """
+    GET /rescues/by-equipment/<equipment_id>/
+    All rescue operations that used a specific piece of equipment.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return base_queryset().filter(equipment_id=self.kwargs["product_id"])
+
+
+class PurchasesByDayView(generics.ListAPIView):
+    """
+    GET /rescues/by-day/<YYYY-MM-DD>/
+    All rescue operations on a specific date.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        raw = self.kwargs["date"]
+        try:
+            target = date.fromisoformat(raw)
+        except ValueError:
+            raise ValidationError({"date": "Invalid date format. Use YYYY-MM-DD."})
+        return base_queryset().filter(date=target)
+
+
+class PurchasesByCategoryView(generics.ListAPIView):
+    """
+    GET /rescues/by-category/<category_id>/
+    All rescue operations using equipment from a specific category.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return base_queryset().filter(equipment__category_id=self.kwargs["category_id"])
+
+
+class PurchasesByMonthYearView(generics.ListAPIView):
+    """
+    GET /rescues/by-month/<YYYY>/<MM>/
+    All rescue operations in a specific month of a specific year.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        year = self.kwargs["year"]
+        month = self.kwargs["month"]
+        if not (1 <= month <= 12):
+            raise ValidationError({"month": "Month must be between 1 and 12."})
+        return base_queryset().filter(date__year=year, date__month=month)
+
+
+class PurchasesByMonthAllYearsView(generics.ListAPIView):
+    """
+    GET /rescues/by-month/<MM>/
+    All rescue operations in a given month across ALL years.
+    Useful for identifying seasonal patterns, e.g. every January.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        month = self.kwargs["month"]
+        if not (1 <= month <= 12):
+            raise ValidationError({"month": "Month must be between 1 and 12."})
+        return base_queryset().filter(date__month=month)
+
+
+class PurchasesByClientView(generics.ListAPIView):
+    """
+    GET /rescues/by-survivor/<survivor_id>/
+    All rescue operations involving a specific survivor.
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return base_queryset().filter(survivor_id=self.kwargs["client_id"])
+
+
+class PurchasesOverPriceView(APIView):
+    """
+    GET /rescues/over-cost/?price=<amount>&currency=<code>
+    All rescue operations where equipment cost exceeds the given threshold.
+    Both `price` and `currency` are required query params.
+
+    Example: /rescues/over-cost/?price=500&currency=PLN
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        price    = request.query_params.get("price")
+        currency = request.query_params.get("currency")
+
+        if not price or not currency:
+            raise ValidationError({"detail": "Both `price` and `currency` query params are required."})
+
+        try:
+            price = float(price)
+        except ValueError:
+            raise ValidationError({"price": "Must be a valid number."})
+
+        qs = base_queryset().filter(equipment_cost__gt=price, currency=currency.upper())
+        serializer = RescueListSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class PurchasesByClientCountryView(generics.ListAPIView):
+    """
+    GET /rescues/by-country/<country>/
+    All rescue operations involving survivors from a given country.
+
+    Example: /rescues/by-country/Poland/
+    """
+    serializer_class = RescueListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return base_queryset().filter(survivor__country__iexact=self.kwargs["country"])
+
+
+# ── Stats ──────────────────────────────────────────────────────────────────────
+
+class PurchaseStatsView(APIView):
+    """
+    GET /rescues/stats/
+    Aggregated rescue operation statistics.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        totals = Rescue.objects.aggregate(
+            total_operations=Count("id"),
+            total_equipment_deployed=Sum("equipment_quantity"),
+        )
+        by_outcome = (
+            Rescue.objects
+            .values("outcome")
+            .annotate(count=Count("id"))
+            .order_by("outcome")
+        )
+        by_currency = (
+            Rescue.objects
+            .values("currency")
+            .annotate(count=Count("id"), total_cost_net=Sum("equipment_cost"))
+            .order_by("currency")
+        )
+        most_used_equipment = (
+            Rescue.objects
+            .values("equipment__name")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+        most_assisted_survivors = (
+            Rescue.objects
+            .values("survivor__name")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+        return Response({
+            "totals":                   totals,
+            "by_outcome":               list(by_outcome),
+            "by_currency":              list(by_currency),
+            "most_used_equipment":      list(most_used_equipment),
+            "most_assisted_survivors":  list(most_assisted_survivors),
+        })
