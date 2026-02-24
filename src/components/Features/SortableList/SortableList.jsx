@@ -50,7 +50,7 @@ const SortableItem = ({ id, content, dragStyleProps, dragIcon }) => {
         />
     )
 }
-const SortableList = ({ defaultItems, header = null, footer = null, dragIcon = true, scrollAreaProps, overlay = false, dragStyleProps = {opacity: 0.2}, overlayStyleProps = {bg:"clientFlow.0", c:"clientFlow.4"} }) => {
+const SortableList = ({ defaultItems, onItemsChanged = null, header = null, footer = null, dragIcon = true, scrollAreaProps, overlay = false, dragStyleProps = {opacity: 0.2}, overlayStyleProps = {bg:"clientFlow.0", c:"clientFlow.4"} }) => {
     const [items, setItems] = useState(defaultItems);
     const [activeItem, setActiveItem] = useState(null);
 
@@ -82,8 +82,11 @@ const SortableList = ({ defaultItems, header = null, footer = null, dragIcon = t
             setItems((items) => {
                 const oldIndex = items.findIndex((item) => item.id === active.id);
                 const newIndex = items.findIndex((item) => item.id === over.id);
+                
+                const newItems = arrayMove(items, oldIndex, newIndex);
 
-                return arrayMove(items, oldIndex, newIndex);
+                if (onItemsChanged !== null) onItemsChanged(newItems);
+                return newItems;
             })
         }
     }

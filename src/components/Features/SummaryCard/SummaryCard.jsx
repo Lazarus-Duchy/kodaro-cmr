@@ -2,7 +2,7 @@ import { IconArrowDownRight, IconArrowUpRight } from '@tabler/icons-react';
 import { Grid, Group, Paper, Text } from '@mantine/core';
 
 
-const SummaryCard = ({ title, value, icon, diff = null, desc = "Compared to previous month" }) => {
+const SummaryCard = ({ title, value, icon, diff = null, desc = "In total" }) => {
 
   return (
     <Paper withBorder p="md" radius="md">

@@ -78,7 +78,7 @@ const DroppableContainer = ({ id, title, items, header, footer, gridColProps, sc
         </Grid.Col>
     );
 }
-const KanbanBoard = ({ defaultContainers, header = null, footer = null, dragIcon = true, scrollAreaProps = {}, gridColProps = {span:{base:12,sm: 4}}, dragStyleProps = {opacity: 0.2}, overlay = false, overlayStyleProps = {bg:"clientFlow.0", c:"clientFlow.4"} }) => {
+const KanbanBoard = ({ defaultContainers, onContainersChanged = null, header = null, footer = null, dragIcon = true, scrollAreaProps = {}, gridColProps = {span:{base:12,sm: 4}}, dragStyleProps = {opacity: 0.2}, overlay = false, overlayStyleProps = {bg:"clientFlow.0", c:"clientFlow.4"} }) => {
     const [containers, setContainers] = useState(defaultContainers);
     const [activeItem, setActiveItem] = useState(null);
 
@@ -166,6 +166,7 @@ const KanbanBoard = ({ defaultContainers, header = null, footer = null, dragIcon
 
             })
 
+            if (onContainersChanged !== null) onContainersChanged(newContainers);
             return newContainers;
         })
         
@@ -196,12 +197,14 @@ const KanbanBoard = ({ defaultContainers, header = null, footer = null, dragIcon
             if (activeIndex !== -1 && overIndex !== -1) {
                 const newItems = arrayMove(container.items, activeIndex, overIndex);
 
-                setContainers((containers) => {
-                    return containers.map((container, index) => {
-                        if (index === containerIndex) return {...container, items: newItems};
-                        return container;
-                    })
-                })
+                const newContainers = containers.map((container, index) => {
+                    if (index === containerIndex) return {...container, items: newItems};
+                    return container;
+                });
+
+                if (onContainersChanged !== null) onContainersChanged(newContainers);
+
+                setContainers(newContainers);
             }
         }
 
