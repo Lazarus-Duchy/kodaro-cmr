@@ -1,55 +1,42 @@
-import { Box, Checkbox, Flex, Grid, Paper, ScrollArea, Stack, Text, TextInput, Title, NumberInput, Loader, Center, Select } from "@mantine/core";
-import { IconShoppingBag, IconCurrencyDollar, IconTool, IconTools, IconAxe, IconBolt } from "@tabler/icons-react";
-import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Box, Checkbox, Flex, Grid, Paper, ScrollArea,
+  Stack, Text, TextInput, Title, NumberInput,
+  Loader, Center, Select, Textarea,
+} from "@mantine/core";
+import {
+  IconAxe, IconBolt, IconTool,
+} from "@tabler/icons-react";
+import {
+  CartesianGrid, Cell, Legend, Bar, BarChart,
+  Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 import SummaryCard from "../../Features/SummaryCard/SummaryCard";
 import { TableSort } from "../../Features/TableSort/TableSort";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "@mantine/form";
-import { useListState } from "@mantine/hooks";
-import { DateInput } from "@mantine/dates";
 import { get, post, patch, del } from "../../../api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const COLORS = ["#8884d8", "#83a6ed", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
+const COLORS = ["#8884d8", "#83a6ed", "#8dd1e1", "#82ca9d", "#a4de6c", "#ffc658", "#d0ed57"];
 const RADIAN = Math.PI / 180;
-const CURRENT_YEAR = new Date().getFullYear();
 
-const CURRENCIES = ["USD", "EUR", "GBP", "PLN", "CHF", "JPY", "CAD", "AUD"];
+// Mirrors Product.Status TextChoices
+const STATUS_OPTIONS = [
+  { value: "available",      label: "Available" },
+  { value: "unavailable",    label: "Unavailable (Under Maintenance)" },
+  { value: "decommissioned", label: "Decommissioned" },
+];
+
+// Mirrors Product.Currency TextChoices
+const CURRENCY_OPTIONS = [
+  { value: "PLN", label: "PLN" },
+  { value: "USD", label: "USD" },
+  { value: "EUR", label: "EUR" },
+  { value: "GBP", label: "GBP" },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function buildChartData(purchases) {
-  const productNames = [...new Set(purchases.map((p) => p.product_name ?? p.product ?? "Unknown"))];
-
-  const monthMap = {};
-  MONTH_NAMES.forEach((name, i) => {
-    monthMap[i + 1] = { name };
-    productNames.forEach((pName) => { monthMap[i + 1][pName] = 0; });
-  });
-
-  purchases.forEach((p) => {
-    const d = new Date(p.date);
-    if (d.getFullYear() !== CURRENT_YEAR) return;
-    const month = d.getMonth() + 1;
-    const productName = p.product_name ?? p.product ?? "Unknown";
-    const value = parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1);
-    monthMap[month][productName] += value;
-  });
-
-  return Object.values(monthMap);
-}
-
-function buildProductRevenuePie(purchases) {
-  const map = {};
-  purchases.forEach((p) => {
-    const name = p.product_name ?? p.product ?? "Unknown";
-    const value = parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1);
-    map[name] = (map[name] ?? 0) + value;
-  });
-  return Object.entries(map).map(([name, value]) => ({ name, value: Math.round(value) }));
-}
 
 const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
   if (percent < 0.05) return null;
@@ -63,20 +50,35 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
   );
 };
 
-// ─── Table structure ──────────────────────────────────────────────────────────
+// ─── Table structure — matches ProductListSerializer fields ───────────────────
 
 const equipmentTableStructure = [
-  { name: "name",         label: "Name"       },
-  { name: "category",     label: "Category"   },
-  { name: "quantity",     label: "Qty"        },
-  { name: "unit_price",   label: "Unit Price" },
+  { name: "name",          label: "Name",          default: "" },
+  { name: "sku",           label: "SKU / Serial",  default: "" },
+  { name: "category_name", label: "Category",      default: "" },
+  { name: "status",        label: "Status",        default: "" },
+  { name: "price",         label: "Price",         default: "" },
+  { name: "currency",      label: "Currency",      default: "" },
 ];
 
-const purchaseValidation = {
-  name: (v) => v ? null : "Name is required",
-  category:  (v) => v ? null : "Category is required",
-  quantity:   (v) => (v > 0 ? null : "Must be > 0"),
-  unit_price: (v) => (v >= 0 ? null : "Must be ≥ 0"),
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+const equipmentValidation = {
+  name:  (v) => (v ? null : "Name is required"),
+  price: (v) => (v === "" || v === undefined || v === null ? "Price is required" : v < 0 ? "Must be ≥ 0" : null),
+};
+
+// ─── Default form values ──────────────────────────────────────────────────────
+
+const initialValues = {
+  name:        "",
+  sku:         "",
+  description: "",
+  status:      "available",
+  category:    null,
+  price:       "",
+  currency:    "PLN",
+  tax_rate:    0,
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -84,112 +86,146 @@ const purchaseValidation = {
 const Sales = () => {
   const [loading, setLoading] = useState(true);
 
-  // Purchases table state
+  // Table data
   const [equipment, setEquipment] = useState([]);
-  const [equipmentCategories, setEquipmentCategories] = useState([]);
 
-  // Chart state
-  const [chartData, setChartData] = useState([]);
-  const [pieData, setPieData]     = useState([]);
-  const [productsDisplay, productsDisplayHandlers] = useListState([]);
+  // Select options for the category dropdown
+  const [categoryOptions, setCategoryOptions] = useState([]);
 
+  // Chart data derived from /equipment/stats/
+  const [categoryPieData, setCategoryPieData] = useState([]);
+  const [statusBarData,   setStatusBarData]   = useState([]);
+
+  // Summary card values
   const [stats, setStats] = useState([
-    { title: "Total Equipment", value: "—", icon: <IconAxe size={24} /> },
-    { title: "Total Equipment Usage",     value: "—", icon: <IconBolt size={24} /> },
+    { title: "Total Equipment",  value: "—", icon: <IconAxe  size={24} /> },
+    { title: "Available",        value: "—", icon: <IconBolt size={24} /> },
+    { title: "Under Maintenance",value: "—", icon: <IconTool size={24} /> },
   ]);
 
   // ── Forms ──────────────────────────────────────────────────────────────────
 
-  const newRowForm  = useForm({ mode: "uncontrolled", validate: purchaseValidation });
-  const editRowForm = useForm({ mode: "uncontrolled", validate: purchaseValidation });
+  const newRowForm  = useForm({ mode: "uncontrolled", initialValues, validate: equipmentValidation });
+  const editRowForm = useForm({ mode: "uncontrolled", initialValues, validate: equipmentValidation });
 
-  const purchaseFields = (form) => [
-    <TextInput 
+  const buildFields = (form) => [
+    <TextInput
       key={form.key("name")}
       label="Name"
       withAsterisk
       {...form.getInputProps("name")}
     />,
+    <TextInput
+      key={form.key("sku")}
+      label="SKU / Serial Number"
+      {...form.getInputProps("sku")}
+    />,
+    <Textarea
+      key={form.key("description")}
+      label="Description"
+      autosize
+      minRows={2}
+      {...form.getInputProps("description")}
+    />,
+    <Select
+      key={form.key("status")}
+      label="Status"
+      data={STATUS_OPTIONS}
+      {...form.getInputProps("status")}
+    />,
     <Select
       key={form.key("category")}
       label="Category"
-      data={equipmentCategories}
-      withAsterisk
-      required
+      data={categoryOptions}
       searchable
+      clearable
       {...form.getInputProps("category")}
     />,
     <NumberInput
-      key={form.key("quantity")}
-      label="Quantity"
-      min={1}
+      key={form.key("price")}
+      label="Price"
       withAsterisk
-      required
-      {...form.getInputProps("quantity")}
-    />,
-    <NumberInput
-      key={form.key("unit_price")}
-      label="Unit Price"
       min={0}
       decimalScale={2}
-      withAsterisk
-      required
-      {...form.getInputProps("unit_price")}
+      {...form.getInputProps("price")}
+    />,
+    <Select
+      key={form.key("currency")}
+      label="Currency"
+      data={CURRENCY_OPTIONS}
+      {...form.getInputProps("currency")}
+    />,
+    <NumberInput
+      key={form.key("tax_rate")}
+      label="Tax Rate (%)"
+      min={0}
+      max={100}
+      decimalScale={2}
+      suffix="%"
+      {...form.getInputProps("tax_rate")}
     />,
   ];
 
-  const newRowFields  = purchaseFields(newRowForm);
-  const editRowFields = purchaseFields(editRowForm);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const newRowFields  = useMemo(() => buildFields(newRowForm),  [newRowForm, categoryOptions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const editRowFields = useMemo(() => buildFields(editRowForm), [editRowForm, categoryOptions]);
 
-  // ── Fetch on mount ─────────────────────────────────────────────────────────
+  // ── Stats helper ────────────────────────────────────────────────────────────
+
+  const applyStats = (statsData, equipmentList) => {
+    const byStatus = statsData?.by_status ?? {};
+    const total    = equipmentList.length;
+
+    setStats([
+      { title: "Total Equipment",   value: String(total),                          icon: <IconAxe  size={24} /> },
+      { title: "Available",         value: String(byStatus["available"]      ?? 0), icon: <IconBolt size={24} /> },
+      { title: "Under Maintenance", value: String(byStatus["unavailable"]    ?? 0), icon: <IconTool size={24} /> },
+    ]);
+
+    // Pie — equipment count per category
+    const byCategory = statsData?.by_category ?? [];
+    setCategoryPieData(
+      byCategory.map((item) => ({
+        name:  item.category__name ?? "Uncategorised",
+        value: item.count,
+      }))
+    );
+
+    // Bar — equipment count per status
+    setStatusBarData(
+      Object.entries(byStatus).map(([status, count]) => ({
+        name:  STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status,
+        count,
+      }))
+    );
+  };
+
+  // ── Fetch on mount ──────────────────────────────────────────────────────────
+
+  const refreshStats = async (currentList) => {
+    const statsData = await get("/equipment/stats/");
+    applyStats(statsData, currentList);
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [purchasesData, productsData, clientsData] = await Promise.all([
-          get("/purchases/"),
-          get("/products/"),
-          get("/clients/"),
+        const [equipmentData, categoriesData, statsData] = await Promise.all([
+          get("/equipment/"),
+          get("/equipment/categories/"),
+          get("/equipment/stats/"),
         ]);
 
-        const purchaseList = Array.isArray(purchasesData) ? purchasesData : (purchasesData.results ?? []);
-        const productList  = Array.isArray(productsData)  ? productsData  : (productsData.results  ?? []);
-        const clientList   = Array.isArray(clientsData)   ? clientsData   : (clientsData.results   ?? []);
+        const list = Array.isArray(equipmentData) ? equipmentData : (equipmentData.results ?? []);
+        setEquipment(list);
 
-        // Dropdown options
-        setProductOptions(productList.map((p) => ({ value: p.id, label: p.name })));
-        setClientOptions(clientList.map((c)   => ({ value: c.id, label: c.name })));
+        const cats = Array.isArray(categoriesData) ? categoriesData : (categoriesData.results ?? []);
+        setCategoryOptions(cats.map((c) => ({ value: c.id, label: c.name })));
 
-        // Purchases table rows — flatten for display
-        setEquipment(purchaseList.map((p) => ({
-          id:           p.id,
-          product_name: p.product_name ?? p.product ?? "—",
-          client_name:  p.client_name  ?? p.client  ?? "—",
-          quantity:     p.quantity,
-          unit_price:   parseFloat(p.unit_price ?? 0),
-          currency:     p.currency,
-          date:         p.date,
-          // keep raw IDs for edit form pre-fill
-          product:      p.product,
-          client:       p.client,
-        })));
-
-        // Charts
-        setChartData(buildChartData(purchaseList));
-        setPieData(buildProductRevenuePie(purchaseList));
-
-        const uniqueNames = [...new Set(purchaseList.map((p) => p.product_name ?? p.product ?? "Unknown"))];
-        productsDisplayHandlers.setState(uniqueNames.map((name) => ({ name, label: name, checked: true })));
-
-        const totalRevenue = purchaseList.reduce(
-          (sum, p) => sum + parseFloat(p.unit_price ?? 0) * (p.quantity ?? 1), 0
-        );
-        setStats([
-          { title: "Total Equipment", value: String(totalRevenue), icon: <IconAxe size={24} /> },
-          { title: "Total Equipment Usage",     value: String(purchaseList.length), icon: <IconBolt size={24} /> },
-        ]);
+        applyStats(statsData, list);
       } catch (err) {
-        console.error("Failed to load sales data:", err);
+        console.error("Failed to load equipment data:", err);
       } finally {
         setLoading(false);
       }
@@ -199,89 +235,82 @@ const Sales = () => {
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
 
+  const serializeValues = (values) => ({
+    ...values,
+    // NumberInput returns "" when empty — backend DecimalField rejects that
+    price:    values.price    === "" ? null : values.price,
+    tax_rate: values.tax_rate === "" ? 0    : values.tax_rate,
+    // null category is fine (SET_NULL on the model)
+    category: values.category ?? null,
+  });
+
   const handleAdd = async (values) => {
-    // Format date as YYYY-MM-DD string if it's a Date object
-    const payload = {
-      ...values,
-      date: values.date instanceof Date
-        ? values.date.toISOString().split("T")[0]
-        : values.date,
-    };
-    const created = await post("/purchases/", payload);
-    setEquipment((prev) => [{
-      id:           created.id,
-      product_name: created.product_name ?? created.product ?? "—",
-      client_name:  created.client_name  ?? created.client  ?? "—",
-      quantity:     created.quantity,
-      unit_price:   parseFloat(created.unit_price ?? 0),
-      currency:     created.currency,
-      date:         created.date,
-      product:      created.product,
-      client:       created.client,
-    }, ...prev]);
+    const created = await post("/equipment/", serializeValues(values));
+    setEquipment((prev) => {
+      const next = [created, ...prev];
+      refreshStats(next);
+      return next;
+    });
   };
 
   const handleEdit = async (id, values) => {
-    const payload = {
-      ...values,
-      date: values.date instanceof Date
-        ? values.date.toISOString().split("T")[0]
-        : values.date,
-    };
-    const updated = await patch(`/purchases/${id}/`, payload);
-    setEquipment((prev) => prev.map((row) => row.id === id ? {
-      id:           updated.id,
-      product_name: updated.product_name ?? updated.product ?? "—",
-      client_name:  updated.client_name  ?? updated.client  ?? "—",
-      quantity:     updated.quantity,
-      unit_price:   parseFloat(updated.unit_price ?? 0),
-      currency:     updated.currency,
-      date:         updated.date,
-      product:      updated.product,
-      client:       updated.client,
-    } : row));
+    const updated = await patch(`/equipment/${id}/`, serializeValues(values));
+    setEquipment((prev) => {
+      const next = prev.map((row) => (row.id === id ? updated : row));
+      refreshStats(next);
+      return next;
+    });
   };
 
   const handleDelete = async (id) => {
-    await del(`/purchases/${id}/`);
-    setEquipment((prev) => prev.filter((row) => row.id !== id));
+    await del(`/equipment/${id}/`);
+    setEquipment((prev) => {
+      const next = prev.filter((row) => row.id !== id);
+      refreshStats(next);
+      return next;
+    });
   };
 
-  // ── Checkbox state ─────────────────────────────────────────────────────────
-
-  const allChecked    = productsDisplay.every((v) => v.checked);
-  const indeterminate = productsDisplay.some((v) => v.checked) && !allChecked;
+  // ── Loading state ───────────────────────────────────────────────────────────
 
   if (loading) {
     return <Center h={400}><Loader size="lg" /></Center>;
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <Stack gap="lg">
       <Box>
-        <Title order={1}>Equipment Usage</Title>
-        <Text c="dimmed" size="sm">Everything about usage of your equipment</Text>
+        <Title order={1}>Equipment Management</Title>
+        <Text c="dimmed" size="sm">Track and manage all rescue team equipment</Text>
       </Box>
 
-      {/* ── Summary cards + Pie ── */}
+      {/* ── Summary cards + Category pie ── */}
       <Grid>
         {stats.map((stat, i) => (
-          <Grid.Col key={i} span={{ base: 12, sm: 4 }}>
+          <Grid.Col key={i} span={{ base: 12, sm: 3 }}>
             <SummaryCard title={stat.title} icon={stat.icon} value={stat.value} desc={stat.desc} />
           </Grid.Col>
         ))}
-        <Grid.Col span={{ base: 12, sm: 4 }}>
+
+        <Grid.Col span={{ base: 12, sm: 3 }}>
           <Paper withBorder p="md" radius="md" h="100%">
-            <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb="xs">Usage per Equipment</Text>
-            <ResponsiveContainer width="100%" aspect={1.4}>
+            <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb="xs">By Category</Text>
+            <ResponsiveContainer width="100%" aspect={1.2}>
               <PieChart>
-                <Pie data={pieData} dataKey="value" labelLine={false} label={renderCustomizedLabel}>
-                  {pieData.map((_, i) => (
+                <Pie
+                  data={categoryPieData}
+                  dataKey="value"
+                  labelLine={false}
+                  label={renderCustomizedLabel}
+                >
+                  {categoryPieData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(v, name) => [Number(v).toLocaleString(), name]}
+                  formatter={(v, name) => [v, name]}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                 />
                 <Legend />
@@ -291,65 +320,34 @@ const Sales = () => {
         </Grid.Col>
       </Grid>
 
-      {/* ── Line chart ── */}
-      <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="xl">Usage per Equipment — {CURRENT_YEAR}</Text>
-        <Flex wrap="wrap" gap="md">
-          <Box h={300} style={{ flex: "1 1 70%" }}>
+      {/* ── Status bar chart ── */}
+      {statusBarData.length > 0 && (
+        <Paper withBorder p="md" radius="md">
+          <Text fw={700} mb="xl">Equipment by Operational Status</Text>
+          <Box h={250}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <BarChart data={statusBarData} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#888" }} />
                 <Tooltip
-                  formatter={(v, name) => [Number(v).toLocaleString(), name]}
+                  formatter={(v) => [v, "Items"]}
                   contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                 />
-                {productsDisplay.map((product, i) =>
-                  product.checked ? (
-                    <Line
-                      key={product.name}
-                      type="monotone"
-                      dataKey={product.name}
-                      stroke={COLORS[i % COLORS.length]}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls
-                    />
-                  ) : null
-                )}
-                <Legend />
-              </LineChart>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {statusBarData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </Box>
+        </Paper>
+      )}
 
-          <ScrollArea h={300} style={{ flex: "1 1 20%" }}>
-            <Stack gap="xs">
-              <Checkbox
-                checked={allChecked}
-                indeterminate={indeterminate}
-                label="Show all"
-                onChange={() =>
-                  productsDisplayHandlers.setState((cur) => cur.map((v) => ({ ...v, checked: !allChecked })))
-                }
-              />
-              {productsDisplay.map((product, i) => (
-                <Checkbox
-                  key={product.name}
-                  ml={24}
-                  label={product.label}
-                  checked={product.checked}
-                  onChange={(e) => productsDisplayHandlers.setItemProp(i, "checked", e.currentTarget.checked)}
-                />
-              ))}
-            </Stack>
-          </ScrollArea>
-        </Flex>
-      </Paper>
-
-      {/* ── Purchases table ── */}
+      {/* ── Equipment table ── */}
       <Paper withBorder p="md" radius="md">
-        <Text fw={700} mb="md">Equipment</Text>
+        <Text fw={700} mb="md">All Equipment</Text>
         <TableSort
           structure={equipmentTableStructure}
           data={equipment}
@@ -360,12 +358,14 @@ const Sales = () => {
           editRowForm={editRowForm}
           newRowFields={newRowFields}
           editRowFields={editRowFields}
-          canAddRows canEditRows canDeleteRows
+          canAddRows
+          canEditRows
+          canDeleteRows
           addRowsTitle="Add new equipment"
           editRowTitle="Edit equipment"
           deleteRowTitle="Delete equipment"
           addRowBtnInfo="Add equipment"
-          deleteRowInfo="Are you sure you want to delete this equipment? This action cannot be undone."
+          deleteRowInfo="Are you sure you want to delete this equipment item? This action cannot be undone."
         />
       </Paper>
     </Stack>
