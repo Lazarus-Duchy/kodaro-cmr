@@ -37,11 +37,11 @@ from Purchases.views import (
     PurchaseStatsView,
 )
 from Pracownicy.views import (
-    PracownikListCreateView,
-    PracownikDetailView,
-    PracownikStatsView,
-    KontaktAwaryjnyListCreateView,
-    KontaktAwaryjnyDetailView,
+    RescuerListCreateView,
+    RescuerDetailView,
+    RescuerStatsView,
+    EmergencyContactListCreateView,
+    EmergencyContactDetailView,
 )
 
 
@@ -93,12 +93,12 @@ urlpatterns = [
     path("purchases/over-price/",                          PurchasesOverPriceView.as_view(),        name="purchases-over-price"),
     path("purchases/by-country/<str:country>/",            PurchasesByClientCountryView.as_view(),  name="purchases-by-country"),
 
-    # ── Pracownicy ────────────────────────────────────────────────────────────
-    path("pracownicy/",           PracownikListCreateView.as_view(), name="pracownik-list"),
-    path("pracownicy/stats/",     PracownikStatsView.as_view(),      name="pracownik-stats"),
-    path("pracownicy/<uuid:pk>/", PracownikDetailView.as_view(),     name="pracownik-detail"),
+    # ── Rescuers ──────────────────────────────────────────────────────────────
+    path("rescuers/",           RescuerListCreateView.as_view(), name="rescuer-list"),
+    path("rescuers/stats/",     RescuerStatsView.as_view(),      name="rescuer-stats"),
+    path("rescuers/<uuid:pk>/", RescuerDetailView.as_view(),     name="rescuer-detail"),
 
-    # ── Kontakty awaryjne (nested) ────────────────────────────────────────────
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/",           KontaktAwaryjnyListCreateView.as_view(), name="kontakt-awaryjny-list"),
-    path("pracownicy/<uuid:pracownik_pk>/kontakty/<uuid:pk>/", KontaktAwaryjnyDetailView.as_view(),     name="kontakt-awaryjny-detail"),
+    # ── Emergency Contacts (nested) ───────────────────────────────────────────
+    path("rescuers/<uuid:rescuer_pk>/contacts/",           EmergencyContactListCreateView.as_view(), name="emergency-contact-list"),
+    path("rescuers/<uuid:rescuer_pk>/contacts/<uuid:pk>/", EmergencyContactDetailView.as_view(),     name="emergency-contact-detail"),
 ]
